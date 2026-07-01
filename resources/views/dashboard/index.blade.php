@@ -80,16 +80,14 @@
         <input type="hidden" name="nama_kecamatan" value="{{ $filters['nama_kecamatan'] }}">
 
         <div class="flex-1">
-            <p class="text-xs font-bold text-slate-500 uppercase mb-1">Export Data</p>
-            <p class="text-xs text-slate-400">
-                Mengikuti filter yang sedang aktif di atas (Petugas, Kecamatan, SLS Code).
+            <p class="text-xs font-bold text-slate-700 uppercase mb-3">Export Data</p>
             </p>
         </div>
 
         <div>
             <label class="block text-xs font-medium text-slate-500 mb-1">Cakupan Tanggal</label>
             <select name="scope" class="w-full md:w-56 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="current">{{ $selectedDate ? \Illuminate\Support\Carbon::parse($selectedDate)->translatedFormat('d M Y') : '-' }}</option>
+                <option value="current">Tanggal Terpilih ({{ $selectedDate ? \Illuminate\Support\Carbon::parse($selectedDate)->translatedFormat('d M Y') : '-' }})</option>
             </select>
         </div>
 
@@ -118,75 +116,63 @@
     @else
 
         {{-- ================= KPI CARDS ================= --}}
-        <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 
             <div class="kpi-card">
-                <div class="flex items-center gap-3">
-                    <div class="kpi-icon" style="background:#2563eb">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                    </div>
-                    <span class="text-xs font-semibold text-blue-600 uppercase">Total Assignment</span>
+                <div class="kpi-icon shrink-0 mb-2" style="background:#2563eb">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
-                <div class="text-2xl font-bold text-slate-800">{{ number_format($summary['total']) }}</div>
+                <div class="text-xs font-semibold text-blue-600 uppercase mb-1">Total Assignment</div>
+                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['total']) }}</div>
                 @include('dashboard.partials.delta', ['delta' => $comparison['total'] ?? null])
             </div>
 
             <div class="kpi-card">
-                <div class="flex items-center gap-3">
-                    <div class="kpi-icon" style="background:#16a34a">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                    </div>
-                    <span class="text-xs font-semibold text-green-600 uppercase">Open</span>
+                <div class="kpi-icon shrink-0 mb-2" style="background:#16a34a">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                 </div>
-                <div class="text-2xl font-bold text-slate-800">{{ number_format($summary['open']) }}</div>
+                <div class="text-xs font-semibold text-green-600 uppercase mb-1">Open</div>
+                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['open']) }}</div>
                 <p class="text-xs text-slate-400">{{ $summary['pct_open'] }}% dari total</p>
                 @include('dashboard.partials.delta', ['delta' => $comparison['open'] ?? null])
             </div>
 
             <div class="kpi-card">
-                <div class="flex items-center gap-3">
-                    <div class="kpi-icon" style="background:#f59e0b">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V4a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V20a2 2 0 01-2 2z"/></svg>
-                    </div>
-                    <span class="text-xs font-semibold text-amber-600 uppercase">Draft</span>
+                <div class="kpi-icon shrink-0 mb-2" style="background:#f59e0b">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V4a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V20a2 2 0 01-2 2z"/></svg>
                 </div>
-                <div class="text-2xl font-bold text-slate-800">{{ number_format($summary['draft']) }}</div>
+                <div class="text-xs font-semibold text-amber-600 uppercase mb-1">Draft</div>
+                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['draft']) }}</div>
                 <p class="text-xs text-slate-400">{{ $summary['pct_draft'] }}% dari total</p>
                 @include('dashboard.partials.delta', ['delta' => $comparison['draft'] ?? null])
             </div>
 
             <div class="kpi-card">
-                <div class="flex items-center gap-3">
-                    <div class="kpi-icon" style="background:#7c3aed">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                    </div>
-                    <span class="text-xs font-semibold text-violet-600 uppercase leading-tight">Submitted by Pencacah</span>
+                <div class="kpi-icon shrink-0 mb-2" style="background:#7c3aed">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                 </div>
-                <div class="text-2xl font-bold text-slate-800">{{ number_format($summary['submitted']) }}</div>
+                <div class="text-xs font-semibold text-violet-600 uppercase mb-1">Submitted</div>
+                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['submitted']) }}</div>
                 <p class="text-xs text-slate-400">{{ $summary['pct_submitted_pencacah'] }}% dari total</p>
                 @include('dashboard.partials.delta', ['delta' => $comparison['submitted'] ?? null])
             </div>
 
             <div class="kpi-card">
-                <div class="flex items-center gap-3">
-                    <div class="kpi-icon" style="background:#0d9488">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </div>
-                    <span class="text-xs font-semibold text-teal-600 uppercase leading-tight">Approved by Pengawas</span>
+                <div class="kpi-icon shrink-0 mb-2" style="background:#0d9488">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
-                <div class="text-2xl font-bold text-slate-800">{{ number_format($summary['approved']) }}</div>
+                <div class="text-xs font-semibold text-teal-600 uppercase mb-1">Approved</div>
+                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['approved']) }}</div>
                 <p class="text-xs text-slate-400">{{ $summary['pct_approved'] }}% dari total</p>
                 @include('dashboard.partials.delta', ['delta' => $comparison['approved'] ?? null])
             </div>
 
             <div class="kpi-card">
-                <div class="flex items-center gap-3">
-                    <div class="kpi-icon" style="background:#e11d48">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </div>
-                    <span class="text-xs font-semibold text-rose-600 uppercase leading-tight">Rejected by Pengawas</span>
+                <div class="kpi-icon shrink-0 mb-2" style="background:#e11d48">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </div>
-                <div class="text-2xl font-bold text-slate-800">{{ number_format($summary['rejected']) }}</div>
+                <div class="text-xs font-semibold text-rose-600 uppercase mb-1">Rejected</div>
+                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['rejected']) }}</div>
                 <p class="text-xs text-slate-400">{{ $summary['pct_rejected'] }}% dari total</p>
                 @include('dashboard.partials.delta', ['delta' => $comparison['rejected'] ?? null])
             </div>
@@ -297,6 +283,8 @@
                 </table>
             </div>
             <div class="px-5 py-3 text-xs text-slate-400 border-t border-slate-100">
+                * Non Open = Total &minus; Open. Submit+ = Submitted + Approved + Rejected. Baris biru muda = subtotal kecamatan, baris gelap = grand total seluruh kabupaten/kota.
+            </div>
         </div>
 
     @endif

@@ -30,7 +30,7 @@ class PetugasReferenceController extends Controller
 
         if (! isset($map['petugas_username'])) {
             return back()->withErrors([
-                'reference_file' => 'Kolom petugas (petugas_username / username / email) tidak ditemukan di file. '
+                'reference_file' => 'Kolom petugas_username tidak ditemukan di file. '
                     .'Kolom yang terbaca dari file Anda: '.implode(', ', $headers),
             ]);
         }
@@ -38,25 +38,25 @@ class PetugasReferenceController extends Controller
         $count = 0;
 
         DB::transaction(function () use ($rows, $map, &$count) {
-            
+
             PetugasReference::query()->delete();
 
             $now = now();
             $batch = [];
 
             foreach ($rows as $row) {
-                $email = $this->val($row, $map, 'petugas_email');
-                if (! $email) {
+                $username = $this->val($row, $map, 'petugas_username');
+                if (! $username) {
                     continue;
                 }
 
                 $batch[] = [
-                    'petugas_username' => $email,
-                    'Nama Petugas' => $this->val($row, $map, 'nama_petugas'),
-                    'Kode Kec' => $this->val($row, $map, 'kode_kec'),
-                    'Kecamatan' => $this->val($row, $map, 'nama_kecamatan'),
-                    'created_at' => $now,
-                    'updated_at' => $now,
+                    'petugas_username' => $username,
+                    'nama_petugas'     => $this->val($row, $map, 'nama_petugas'),
+                    'kode_kecamatan'   => $this->val($row, $map, 'kode_kec'),
+                    'nama_kecamatan'   => $this->val($row, $map, 'nama_kecamatan'),
+                    'created_at'       => $now,
+                    'updated_at'       => $now,
                 ];
                 $count++;
             }
@@ -73,10 +73,10 @@ class PetugasReferenceController extends Controller
     private function buildColumnMap(array $headers): array
     {
         $targets = [
-            'petugas_email' => ['petugas_email', 'email'],
-            'nama_petugas' => ['nama_petugas', 'nama'],
-            'kode_kec' => ['kode_kec', 'kode_kecamatan'],
-            'nama_kecamatan' => ['nama_kecamatan', 'kecamatan'],
+            'petugas_username' => ['petugas_username', 'username'],
+            'nama_petugas'     => ['nama_petugas', 'nama'],
+            'kode_kec'         => ['kode_kec', 'kode_kecamatan'],
+            'nama_kecamatan'   => ['nama_kecamatan', 'kecamatan'],
         ];
 
         $map = [];
