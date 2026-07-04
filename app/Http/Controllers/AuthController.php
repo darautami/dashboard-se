@@ -19,7 +19,7 @@ class AuthController extends Controller
     {
         $password = $request->input('password');
 
-        if ($password === env('UPLOAD_PASSWORD')) {
+        if ($password === config('admin.upload_password')) {
             session(['role' => 'admin']);
 
             return redirect()->route('dashboard');
