@@ -22,15 +22,13 @@ class UploadController extends Controller
 
 public function store(Request $request): RedirectResponse
 {
-    $request->validate([
-        'upload_password' => ['required'],
-        'upload_date' => ['required', 'date'],
-        'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:20480'],
-    ], [
-        'upload_password.required' => 'Password harus diisi.',
-        'upload_date.required' => 'Tanggal data harus diisi.',
-        'file.required' => 'File harus dipilih.',
-    ]);
+   $request->validate([
+    'upload_date' => ['required', 'date'],
+    'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:20480'],
+], [
+    'upload_date.required' => 'Tanggal data harus diisi.',
+    'file.required' => 'File harus dipilih.',
+]);
 
     $uploadDate = $request->input('upload_date');
     $file = $request->file('file');

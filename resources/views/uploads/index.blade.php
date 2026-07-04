@@ -10,12 +10,6 @@
     <div class="bg-white rounded-xl border border-slate-200 p-5 md:p-6">
         <h2 class="font-semibold text-slate-700 mb-4">Upload File Baru (Progress Harian)</h2>
 
-        @if ($errors->has('upload_password'))
-            <div class="mb-4 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg px-4 py-3">
-                ⚠️ {{ $errors->first('upload_password') }}
-            </div>
-        @endif
-
        <form action="{{ route('uploads.store') }}" method="POST" enctype="multipart/form-data" class="w-full">
     @csrf
 
