@@ -372,7 +372,7 @@ class ExportController extends Controller
         $sheet = $useActiveSheet ? $spreadsheet->getActiveSheet() : $spreadsheet->createSheet();
         $sheet->setTitle('Rekap Kecamatan');
 
-        $headers = ['Row Labels', 'ASSIGNMENT', 'OPEN', 'DRAFT', 'SUBMIT', 'APPROVE', 'REJECT', 'NON OPEN', 'SUBMIT+', '% NON OPEN', '% SUBMIT'];
+        $headers = ['Row Labels', 'ASSIGNMENT', 'OPEN', 'DRAFT', 'SUBMIT', 'APPROVE', 'REJECT', 'NON OPEN', 'SUBMIT+', '% NON OPEN', '% NON OPEN & DRAF'];
         $sheet->fromArray($headers, null, 'A1');
         $sheet->getStyle('A1:K1')->getFont()->setBold(true);
 

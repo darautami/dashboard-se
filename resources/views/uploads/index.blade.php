@@ -10,7 +10,13 @@
     <div class="bg-white rounded-xl border border-slate-200 p-5 md:p-6">
         <h2 class="font-semibold text-slate-700 mb-4">Upload File Baru (Progress Harian)</h2>
 
-        <form action="{{ route('uploads.store') }}" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-3 gap-4 items-start">
+        @if ($errors->has('upload_password'))
+            <div class="mb-4 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg px-4 py-3">
+                ⚠️ {{ $errors->first('upload_password') }}
+            </div>
+        @endif
+
+        <form action="{{ route('uploads.store') }}" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-4 gap-4 items-start">
             @csrf
 
             <div>
@@ -25,6 +31,14 @@
                 <input type="file" name="file" required accept=".xlsx,.xls,.csv,.txt"
                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <p class="text-[11px] text-slate-400 mt-1">Format: .xlsx, .xls, atau .csv (maks 20MB)</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Password Upload</label>
+                <input type="password" name="upload_password" required
+                       placeholder="Masukkan password..."
+                       class="w-full border {{ $errors->has('upload_password') ? 'border-red-400' : 'border-slate-300' }} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-[11px] text-slate-400 mt-1">Hubungi admin jika lupa password.</p>
             </div>
 
             <div>

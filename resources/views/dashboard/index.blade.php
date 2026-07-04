@@ -72,7 +72,6 @@
     <form method="GET" action="{{ route('export') }}"
           class="bg-white rounded-xl border border-slate-200 p-4 md:p-5 flex flex-col md:flex-row md:items-end gap-4">
 
-        {{-- bawa serta filter yang sedang aktif --}}
         <input type="hidden" name="tanggal" value="{{ $selectedDate }}">
         <input type="hidden" name="petugas_username" value="{{ $filters['petugas_username'] }}">
         <input type="hidden" name="petugas_role" value="{{ $filters['petugas_role'] }}">
@@ -81,7 +80,6 @@
 
         <div class="flex-1">
             <p class="text-xs font-bold text-slate-700 uppercase mb-3">Export Data</p>
-            </p>
         </div>
 
         <div>
@@ -114,6 +112,23 @@
             <a href="{{ route('uploads.index') }}" class="text-blue-600 font-medium hover:underline">Upload file pertama Anda &rarr;</a>
         </div>
     @else
+
+        {{-- ================= KPI HIGHLIGHT CARDS ================= --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div class="rounded-xl p-6 text-white" style="background: linear-gradient(135deg, #0ea5e9 0%, #0d9488 100%);">
+                <div class="text-sm font-bold uppercase tracking-widest mb-2">% Non Open</div>
+                <div class="text-5xl font-bold mb-3">{{ $summary['pct_non_open'] }}%</div>
+                <div class="text-xs opacity-70">{{ number_format($summary['non_open']) }} dari {{ number_format($summary['total']) }} assignment sudah bergerak dari status Open</div>
+            </div>
+
+            <div class="rounded-xl p-6 text-white" style="background: linear-gradient(135deg, #f97316 0%, #eab308 100%);">
+                <div class="text-sm font-bold uppercase tracking-widest mb-2">% Non Open & Draft</div>
+                <div class="text-5xl font-bold mb-3">{{ $summary['pct_submitted'] }}%</div>
+                <div class="text-xs opacity-70">{{ number_format($summary['submit_plus']) }} dari {{ number_format($summary['total']) }} assignment sudah Submitted, Approved, atau Rejected</div>
+            </div>
+
+        </div>
 
         {{-- ================= KPI CARDS ================= --}}
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -217,12 +232,11 @@
                             <th class="text-right px-5 py-3 font-medium text-slate-600">Non Open</th>
                             <th class="text-right px-5 py-3 font-medium text-slate-600">Submit+</th>
                             <th class="text-right px-5 py-3 font-medium text-slate-600">% Non Open</th>
-                            <th class="text-right px-5 py-3 font-medium text-slate-600">% Submitted</th>
+                            <th class="text-right px-5 py-3 font-medium text-slate-600">% Non Open & Draft</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse ($perPetugasGrouped as $group)
-                            {{-- Baris subtotal kecamatan --}}
                             <tr class="bg-blue-50/60">
                                 <td class="px-5 py-2.5"></td>
                                 <td class="px-5 py-2.5 font-bold text-slate-700">{{ $group['label'] }}</td>
@@ -238,7 +252,6 @@
                                 <td class="px-5 py-2.5 text-right font-bold text-slate-700">{{ $group['subtotal']['pct_submitted'] }}%</td>
                             </tr>
 
-                            {{-- Baris tiap petugas dalam kecamatan ini --}}
                             @foreach ($group['petugas'] as $i => $row)
                                 <tr class="hover:bg-slate-50">
                                     <td class="px-5 py-3 text-slate-400">{{ $i + 1 }}</td>
@@ -262,7 +275,6 @@
                             <tr><td colspan="12" class="px-5 py-8 text-center text-slate-400">Tidak ada data untuk filter ini.</td></tr>
                         @endforelse
 
-                        {{-- Baris grand total seluruh kabupaten/kota --}}
                         @if ($perPetugasGrouped->isNotEmpty())
                             <tr class="bg-slate-800">
                                 <td class="px-5 py-3"></td>

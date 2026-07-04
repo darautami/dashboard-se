@@ -12,93 +12,95 @@ use Illuminate\View\View;
 
 class UploadController extends Controller
 {
-   public function index(): View
-{
-    $uploads = Upload::orderByDesc('upload_date')->get();
-    $referenceCount = \App\Models\PetugasReference::count();
-
-    return view('uploads.index', compact('uploads', 'referenceCount'));
-}
-
-    public function store(Request $request): RedirectResponse
+    public function index(): View
     {
-        $request->validate([
-            'upload_date' => ['required', 'date'],
-            'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:20480'],
-        ], [], [
-            'upload_date' => 'Tanggal data',
-            'file' => 'File',
-        ]);
+        $uploads = Upload::orderByDesc('upload_date')->get();
+        $referenceCount = \App\Models\PetugasReference::count();
 
-        $uploadDate = $request->input('upload_date');
-        $file = $request->file('file');
-        $extension = $file->getClientOriginalExtension();
-        $fullPath = $file->getRealPath();
+        return view('uploads.index', compact('uploads', 'referenceCount'));
+    }
 
-        [$headers, $rows] = SpreadsheetReader::read($fullPath, $extension);
+public function store(Request $request): RedirectResponse
+{
+    $request->validate([
+        'upload_password' => ['required'],
+        'upload_date' => ['required', 'date'],
+        'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:20480'],
+    ], [
+        'upload_password.required' => 'Password harus diisi.',
+        'upload_date.required' => 'Tanggal data harus diisi.',
+        'file.required' => 'File harus dipilih.',
+    ]);
 
-        if (empty($rows)) {
-            return back()->withErrors(['file' => 'File tidak terbaca atau tidak ada data di dalamnya.']);
+    if ($request->input('upload_password') !== env('UPLOAD_PASSWORD')) {
+        return back()->withErrors(['upload_password' => 'Password salah.'])->withInput();
+    }
+
+    $uploadDate = $request->input('upload_date');
+    $file = $request->file('file');
+    $extension = $file->getClientOriginalExtension();
+    $fullPath = $file->getRealPath();
+
+    [$headers, $rows] = SpreadsheetReader::read($fullPath, $extension);
+
+    if (empty($rows)) {
+        return back()->withErrors(['file' => 'File tidak terbaca atau tidak ada data di dalamnya.']);
+    }
+
+    $map = $this->buildColumnMap($headers);
+
+    DB::transaction(function () use ($uploadDate, $rows, $map, $file) {
+        $existing = Upload::where('upload_date', $uploadDate)->first();
+        if ($existing) {
+            $existing->delete();
         }
 
-        $map = $this->buildColumnMap($headers);
+        $upload = Upload::create([
+            'upload_date' => $uploadDate,
+            'original_filename' => $file->getClientOriginalName(),
+            'total_rows' => count($rows),
+        ]);
 
-        DB::transaction(function () use ($uploadDate, $rows, $map, $file) {
-            // Hapus snapshot lama untuk tanggal yang sama (replace), supaya bisa "upload ulang" tanpa duplikat
-            $existing = Upload::where('upload_date', $uploadDate)->first();
-            if ($existing) {
-                $existing->delete(); 
-            }
+        $now = now();
+        $batch = [];
 
-            $upload = Upload::create([
+        foreach ($rows as $row) {
+            $batch[] = [
+                'upload_id' => $upload->id,
                 'upload_date' => $uploadDate,
-                'original_filename' => $file->getClientOriginalName(),
-                'total_rows' => count($rows),
-            ]);
+                'kabupaten_code' => $this->val($row, $map, 'kabupaten_code'),
+                'kabupaten_name' => $this->val($row, $map, 'kabupaten_name'),
+                'petugas_user_id' => $this->val($row, $map, 'petugas_user_id'),
+                'petugas_username' => $this->val($row, $map, 'petugas_username'),
+                'petugas_email' => $this->val($row, $map, 'petugas_email'),
+                'petugas_role' => $this->val($row, $map, 'petugas_role'),
+                'petugas_total_assignment' => $this->intVal($row, $map, 'petugas_total_assignment'),
+                'sls_code' => SpreadsheetReader::toCleanString($this->val($row, $map, 'sls_code')),
+                'sls_total_assignment' => $this->intVal($row, $map, 'sls_total_assignment'),
+                'status_open' => $this->intVal($row, $map, 'assignment_status_open'),
+                'status_draft' => $this->intVal($row, $map, 'assignment_status_draft'),
+                'status_submitted_pencacah' => $this->intVal($row, $map, 'assignment_status_submitted_by_pencacah'),
+                'status_approved_pengawas' => $this->intVal($row, $map, 'assignment_status_approved_by_pengawas'),
+                'status_rejected_pengawas' => $this->intVal($row, $map, 'assignment_status_rejected_by_pengawas'),
+                'status_edited_pengawas' => $this->intVal($row, $map, 'assignment_status_edited_by_pengawas'),
+                'status_revoked_pengawas' => $this->intVal($row, $map, 'assignment_status_revoked_by_pengawas'),
+                'status_submitted_respondent' => $this->intVal($row, $map, 'assignment_status_submitted_respondent'),
+                'status_completed_admin_kab' => $this->intVal($row, $map, 'assignment_status_completed_by_admin_kabupaten'),
+                'status_edited_admin_kab' => $this->intVal($row, $map, 'assignment_status_edited_by_admin_kabupaten'),
+                'status_rejected_admin_kab' => $this->intVal($row, $map, 'assignment_status_rejected_by_admin_kabupaten'),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
 
-            $now = now();
-            $batch = [];
+        foreach (array_chunk($batch, 500) as $chunk) {
+            AssignmentSnapshot::insert($chunk);
+        }
+    });
 
-            foreach ($rows as $row) {
-                $batch[] = [
-                    'upload_id' => $upload->id,
-                    'upload_date' => $uploadDate,
-
-                    'kabupaten_code' => $this->val($row, $map, 'kabupaten_code'),
-                    'kabupaten_name' => $this->val($row, $map, 'kabupaten_name'),
-
-                    'petugas_user_id' => $this->val($row, $map, 'petugas_user_id'),
-                    'petugas_username' => $this->val($row, $map, 'petugas_username'),
-                    'petugas_email' => $this->val($row, $map, 'petugas_email'),
-                    'petugas_role' => $this->val($row, $map, 'petugas_role'),
-                    'petugas_total_assignment' => $this->intVal($row, $map, 'petugas_total_assignment'),
-
-                    'sls_code' => SpreadsheetReader::toCleanString($this->val($row, $map, 'sls_code')),
-                    'sls_total_assignment' => $this->intVal($row, $map, 'sls_total_assignment'),
-
-                    'status_open' => $this->intVal($row, $map, 'assignment_status_open'),
-                    'status_draft' => $this->intVal($row, $map, 'assignment_status_draft'),
-                    'status_submitted_pencacah' => $this->intVal($row, $map, 'assignment_status_submitted_by_pencacah'),
-                    'status_approved_pengawas' => $this->intVal($row, $map, 'assignment_status_approved_by_pengawas'),
-                    'status_rejected_pengawas' => $this->intVal($row, $map, 'assignment_status_rejected_by_pengawas'),
-                    'status_edited_pengawas' => $this->intVal($row, $map, 'assignment_status_edited_by_pengawas'),
-                    'status_revoked_pengawas' => $this->intVal($row, $map, 'assignment_status_revoked_by_pengawas'),
-                    'status_submitted_respondent' => $this->intVal($row, $map, 'assignment_status_submitted_respondent'),
-                    'status_completed_admin_kab' => $this->intVal($row, $map, 'assignment_status_completed_by_admin_kabupaten'),
-
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-
-            foreach (array_chunk($batch, 500) as $chunk) {
-                AssignmentSnapshot::insert($chunk);
-            }
-        });
-
-        return redirect()->route('uploads.index')
-            ->with('success', 'Data tanggal '.\Carbon\Carbon::parse($uploadDate)->translatedFormat('d F Y').' berhasil diupload ('.count($rows).' baris).');
-    }
+    return redirect()->route('uploads.index')
+        ->with('success', 'Data tanggal '.\Carbon\Carbon::parse($uploadDate)->translatedFormat('d F Y').' berhasil diupload ('.count($rows).' baris).');
+}
 
     public function destroy(Upload $upload): RedirectResponse
     {

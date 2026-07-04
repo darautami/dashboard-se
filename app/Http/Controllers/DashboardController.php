@@ -181,7 +181,9 @@ class DashboardController extends Controller
                 COALESCE(SUM(status_draft),0) as draft,
                 COALESCE(SUM(status_submitted_pencacah),0) as submitted,
                 COALESCE(SUM(status_approved_pengawas),0) as approved,
-                COALESCE(SUM(status_rejected_pengawas),0) as rejected
+                COALESCE(SUM(status_rejected_pengawas),0) as rejected,
+                COALESCE(SUM(status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open,
+                COALESCE(SUM(status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open_draft
             ')
             ->groupBy('upload_date')
             ->orderBy('upload_date');
@@ -194,16 +196,18 @@ class DashboardController extends Controller
         // Kalau tanggal sebelumnya tidak ada di trendRows (di luar 7 hari),
         // ambil langsung dari database supaya perbandingan tetap akurat.
         if ($previousDate && ! $trendRows->has($previousDate)) {
-            $prevQueryDirect = AssignmentSnapshot::query()
-                ->where('upload_date', $previousDate)
-                ->selectRaw('
-                    COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
-                    COALESCE(SUM(status_open),0) as open,
-                    COALESCE(SUM(status_draft),0) as draft,
-                    COALESCE(SUM(status_submitted_pencacah),0) as submitted,
-                    COALESCE(SUM(status_approved_pengawas),0) as approved,
-                    COALESCE(SUM(status_rejected_pengawas),0) as rejected
-                ');
+           $prevQueryDirect = AssignmentSnapshot::query()
+            ->where('upload_date', $previousDate)
+            ->selectRaw('
+            COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
+            COALESCE(SUM(status_open),0) as open,
+            COALESCE(SUM(status_draft),0) as draft,
+            COALESCE(SUM(status_submitted_pencacah),0) as submitted,
+            COALESCE(SUM(status_approved_pengawas),0) as approved,
+            COALESCE(SUM(status_rejected_pengawas),0) as rejected,
+            COALESCE(SUM(status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open,
+            COALESCE(SUM(status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open_draft
+    ');
             $this->applyFilters($prevQueryDirect, $filters);
             $prevRowDirect = $prevQueryDirect->first();
             if ($prevRowDirect) {
@@ -219,6 +223,8 @@ class DashboardController extends Controller
             'submitted' => [],
             'approved' => [],
             'rejected' => [],
+            'non_open' => [],
+            'non_open_draft' => [],
         ];
 
         foreach ($availableDatesForTrend as $date) {
@@ -230,6 +236,8 @@ class DashboardController extends Controller
             $trend['submitted'][] = $row ? (int) $row->submitted : 0;
             $trend['approved'][] = $row ? (int) $row->approved : 0;
             $trend['rejected'][] = $row ? (int) $row->rejected : 0;
+            $trend['non_open'][] = $row ? (int) $row->non_open : 0;
+            $trend['non_open_draft'][] = $row ? (int) $row->non_open_draft : 0;
         }
 
         $comparison = null;
