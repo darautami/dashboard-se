@@ -377,7 +377,8 @@ class ExportController extends Controller
         $sheet->getStyle('A1:K1')->getFont()->setBold(true);
 
         $rowIndex = 2;
-        $grand = ['open' => 0, 'draft' => 0, 'submit' => 0, 'approve' => 0, 'reject' => 0];
+        $grand = ['open' => 0, 'draft' => 0, 'submit' => 0, 'approve' => 0, 'reject' => 0]
+        ;
 
         // Kelompokkan ulang per kode_kecamatan supaya bisa diakses nama & sort yang benar
         $petugasByKecamatan = $petugasRows->groupBy(function ($row) use ($referenceMap) {

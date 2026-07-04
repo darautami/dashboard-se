@@ -309,4 +309,53 @@
     </script>
     <script src="{{ asset('js/dashboard.js') }}"></script>
 
+    <script>
+    const kecamatanPetugasMap = @json($kecamatanPetugasMap);
+    const kecamatanSlsMap = @json($kecamatanSlsMap);
+
+    const allPetugas = @json($petugasOptions->map(fn($p) => ['username' => $p->petugas_username, 'nama' => $p->nama_petugas ?? $p->petugas_username]));
+    const allSls = @json($slsOptions);
+
+    const selKecamatan = document.querySelector('select[name="nama_kecamatan"]');
+    const selPetugas = document.querySelector('select[name="petugas_username"]');
+    const selSls = document.querySelector('input[name="sls_code"]');
+    const datalistSls = document.getElementById('sls-suggestions');
+
+    const currentPetugas = "{{ $filters['petugas_username'] }}";
+
+    function updateDropdowns(kecamatan) {
+        const petugasList = kecamatan && kecamatanPetugasMap[kecamatan]
+            ? kecamatanPetugasMap[kecamatan]
+            : allPetugas;
+
+        selPetugas.innerHTML = '<option value="">Semua Petugas</option>';
+        petugasList.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.username;
+            opt.textContent = p.nama || p.username;
+            if (p.username === currentPetugas) opt.selected = true;
+            selPetugas.appendChild(opt);
+        });
+
+        const slsList = kecamatan && kecamatanSlsMap[kecamatan]
+            ? kecamatanSlsMap[kecamatan]
+            : allSls;
+
+        datalistSls.innerHTML = '';
+        slsList.forEach(sls => {
+            const opt = document.createElement('option');
+            opt.value = sls;
+            datalistSls.appendChild(opt);
+        });
+    }
+
+    updateDropdowns(selKecamatan.value);
+
+    selKecamatan.addEventListener('change', function() {
+        updateDropdowns(this.value);
+        selPetugas.value = '';
+        if (selSls) selSls.value = '';
+    });
+    </script>
+
 @endsection

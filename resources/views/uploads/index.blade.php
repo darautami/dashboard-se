@@ -16,80 +16,93 @@
             </div>
         @endif
 
-        <form action="{{ route('uploads.store') }}" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-4 gap-4 items-start">
-            @csrf
+       <form action="{{ route('uploads.store') }}" method="POST" enctype="multipart/form-data" class="w-full">
+    @csrf
 
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Tanggal Data</label>
-                <input type="date" name="upload_date" required
+    {{-- Grid Utama Form --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+
+        {{-- TANGGAL --}}
+        <div class="flex flex-col w-full">
+            <label class="text-xs text-slate-500 mb-1">Tanggal Data</label>
+            <div class="h-[42px] w-full border border-slate-300 rounded-lg bg-white flex items-center px-3 focus-within:border-blue-500">
+                <input type="date"
+                       name="upload_date"
                        value="{{ old('upload_date', now()->format('Y-m-d')) }}"
-                       class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full text-sm bg-transparent outline-none border-none p-0 m-0">
             </div>
+        </div>
 
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">File Excel / CSV</label>
-                <input type="file" name="file" required accept=".xlsx,.xls,.csv,.txt"
-                       class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p class="text-[11px] text-slate-400 mt-1">Format: .xlsx, .xls, atau .csv (maks 20MB)</p>
+       {{-- FILE --}}
+        <div class="flex flex-col w-full">
+            <label class="text-xs text-slate-500 mb-1">File Excel / CSV</label>
+            <div class="h-[42px] w-full border border-slate-300 rounded-lg bg-white flex items-center px-3">
+                <input type="file"
+                       name="file"
+                       class="w-full text-sm outline-none border-none p-0 m-0 cursor-pointer">
             </div>
+        </div>
 
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Password Upload</label>
-                <input type="password" name="upload_password" required
-                       placeholder="Masukkan password..."
-                       class="w-full border {{ $errors->has('upload_password') ? 'border-red-400' : 'border-slate-300' }} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p class="text-[11px] text-slate-400 mt-1">Hubungi admin jika lupa password.</p>
-            </div>
+        {{-- BUTTON --}}
+        <div class="w-full">
+            <button type="submit"
+                    class="h-[42px] w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg flex items-center justify-center shadow-sm transition-colors">
+                Upload Sekarang
+            </button>
+        </div>
 
-            <div>
-                <label class="block text-xs font-medium text-transparent mb-1">&nbsp;</label>
-                <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg px-4 py-2.5 flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3"/></svg>
-                    Upload Sekarang
-                </button>
-                <p class="text-[11px] text-transparent mt-1">&nbsp;</p>
-            </div>
-        </form>
+    </div>
+
+    {{-- Teks Bantuan --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-1">
+        <div class="md:col-start-2">
+            <p class="text-[11px] text-slate-400">
+                Format: .xlsx, .xls, atau .csv (maks 20MB)
+            </p>
+        </div>
+    </div>
+</form>
 
         <div class="mt-4 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-lg px-4 py-3">
             <strong>Catatan:</strong> Jika tanggal yang dipilih sudah pernah diupload sebelumnya, data lama untuk tanggal
             tersebut akan <strong>digantikan</strong> dengan file baru ini (bukan ditambah dobel). Data tanggal-tanggal lain
-            tidak akan terpengaruh dan tetap tersimpan untuk perbandingan.
+            tidak akan terpengaruh dan tetap tersimpan.
         </div>
     </div>
 
     {{-- ================= UPLOAD DATA REFERENSI PETUGAS (NAMA & KECAMATAN) ================= --}}
-    <div class="bg-white rounded-xl border border-slate-200 p-5 md:p-6">
-        <h2 class="font-semibold text-slate-700 mb-1">Upload Data Referensi Petugas (Nama & Kecamatan)</h2>
-        <p class="text-xs text-slate-400 mb-4">
-            File berisi <strong>petugas_username</strong>, <strong>Nama Petugas</strong>, <strong>Kode Kec</strong>,
-            dan <strong>Kecamatan</strong>. Data ini bersifat master/referensi (bukan harian) — setiap upload akan
-            menggantikan seluruh data referensi sebelumnya. Data ini dipakai untuk menampilkan kolom "Nama" dan
-            "Kecamatan" di Dashboard, dan <strong>cukup diupload sekali saja</strong> (upload ulang hanya kalau ada
-            petugas baru / pindah kecamatan). Saat ini tersimpan <strong>{{ number_format($referenceCount) }} petugas</strong> di referensi.
-        </p>
+<div class="bg-white rounded-xl border border-slate-200 p-5 md:p-6">
+    <h2 class="font-semibold text-slate-700 mb-1">Upload Data Referensi Petugas</h2>
+    <p class="text-xs text-slate-400 mb-4">
+        File berisi <strong>petugas_username</strong>, <strong>Nama Petugas</strong>, <strong>Kode Kec</strong>,
+        dan <strong>Kecamatan</strong>. Data ini bersifat master/referensi (bukan harian) — setiap upload akan
+        mengantikan seluruh data referensi sebelumnya. Data ini dipakai untuk menampilkan kolom "Nama" dan
+        "Kecamatan" di Dashboard, dan <strong>cukup diupload sekali saja</strong> (upload ulang hanya kalau ada
+        petugas baru / pindah kecamatan). Saat ini tersimpan <strong>{{ number_format($referenceCount) }} petugas</strong> di referensi.
+    </p>
 
-        <form action="{{ route('references.store') }}" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-3 gap-4 items-start">
-            @csrf
+    <form action="{{ route('references.store') }}" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-3 gap-4 items-end">
+        @csrf
 
-            <div class="md:col-span-2">
-                <label class="block text-xs font-medium text-slate-500 mb-1">File Referensi (Excel/CSV)</label>
+        <div class="flex flex-col w-full md:col-span-2">
+            <label class="block text-xs font-medium text-slate-500 mb-1">File Referensi (Excel/CSV)</label>
+            <div class="h-[42px] w-full border border-slate-300 rounded-lg bg-white flex items-center px-3 focus-within:border-blue-500">
                 <input type="file" name="reference_file" required accept=".xlsx,.xls,.csv,.txt"
-                       class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full text-sm outline-none border-none p-0 m-0 cursor-pointer">
             </div>
+        </div>
 
-            <div>
-                <label class="block text-xs font-medium text-transparent mb-1">&nbsp;</label>
-                <button type="submit"
-                        class="w-full bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg px-4 py-2.5 flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3"/></svg>
-                    Update Referensi
-                </button>
-                <p class="text-[11px] text-transparent mt-1">&nbsp;</p>
-            </div>
-        </form>
-    </div>
+        <div class="w-full">
+            <button type="submit"
+                    class="h-[42px] w-full bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3"/>
+                </svg>
+                Update Referensi
+            </button>
+        </div>
+    </form>
+</div>
 
     {{-- ================= RIWAYAT UPLOAD ================= --}}
     <div class="bg-white rounded-xl border border-slate-200">

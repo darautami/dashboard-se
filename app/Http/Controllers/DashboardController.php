@@ -257,6 +257,29 @@ class DashboardController extends Controller
             ];
         }
 
+        // Mapping kecamatan -> daftar username petugas (untuk filter dinamis di JS)
+        $kecamatanPetugasMap = PetugasReference::query()
+            ->whereNotNull('nama_kecamatan')
+            ->get(['petugas_username', 'nama_petugas', 'nama_kecamatan'])
+            ->groupBy('nama_kecamatan')
+            ->map(fn ($group) => $group->map(fn ($p) => [
+                'username' => $p->petugas_username,
+                'nama' => $p->nama_petugas ?? $p->petugas_username,
+            ])->values())
+            ->toArray();
+
+        // Mapping kecamatan -> daftar SLS code
+        $kecamatanSlsMap = \App\Models\AssignmentSnapshot::query()
+            ->whereNotNull('sls_code')
+            ->whereNotNull('petugas_username')
+            ->when($selectedDate, fn ($q) => $q->where('upload_date', $selectedDate))
+            ->select('petugas_username', 'sls_code')
+            ->distinct()
+            ->get()
+            ->groupBy(fn ($row) => $referenceMap->get($row->petugas_username)?->nama_kecamatan ?? '')
+            ->map(fn ($group) => $group->pluck('sls_code')->unique()->sort()->values())
+            ->toArray();
+
         return view('dashboard.index', [
             'availableDates' => $availableDates,
             'selectedDate' => $selectedDate,
@@ -270,6 +293,8 @@ class DashboardController extends Controller
             'perPetugasGrouped' => $perPetugasGrouped,
             'trend' => $trend,
             'comparison' => $comparison,
+            'kecamatanPetugasMap' => $kecamatanPetugasMap,
+            'kecamatanSlsMap' => $kecamatanSlsMap,
         ]);
     }
 

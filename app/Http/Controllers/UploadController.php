@@ -32,10 +32,6 @@ public function store(Request $request): RedirectResponse
         'file.required' => 'File harus dipilih.',
     ]);
 
-    if ($request->input('upload_password') !== env('UPLOAD_PASSWORD')) {
-        return back()->withErrors(['upload_password' => 'Password salah.'])->withInput();
-    }
-
     $uploadDate = $request->input('upload_date');
     $file = $request->file('file');
     $extension = $file->getClientOriginalExtension();
