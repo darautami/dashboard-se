@@ -1,147 +1,167 @@
 @extends('layouts.app')
 
-@section('title', 'Upload Data - Dashboard Monitoring Petugas')
+@section('title', 'Upload Data - MAPS')
 @section('header_title', 'Upload Data Assignment')
-@section('header_subtitle', 'Upload file Excel/CSV harian. Data tanggal lama tetap tersimpan untuk perbandingan.')
+@section('header_subtitle', 'Upload Data Assignment Harian')
 
 @section('content')
 
+<div class="space-y-6">
+
     {{-- ================= UPLOAD DATA PROGRESS HARIAN ================= --}}
-    <div class="bg-white rounded-xl border border-slate-200 p-5 md:p-6">
-        <h2 class="font-semibold text-slate-700 mb-4">Upload File Baru (Progress Harian)</h2>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
 
-       <form action="{{ route('uploads.store') }}" method="POST" enctype="multipart/form-data" class="w-full">
-    @csrf
+        <h2 class="font-semibold text-slate-800 mb-1">Upload File Baru (Progress Harian)</h2>
+        <p class="text-xs text-slate-400 mb-5">Data harian yang baru akan otomatis dibandingkan dengan upload sebelumnya.</p>
 
-    {{-- Grid Utama Form --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <form action="{{ route('uploads.store') }}" method="POST" enctype="multipart/form-data" class="w-full">
+            @csrf
 
-        {{-- TANGGAL --}}
-        <div class="flex flex-col w-full">
-            <label class="text-xs text-slate-500 mb-1">Tanggal Data</label>
-            <div class="h-[42px] w-full border border-slate-300 rounded-lg bg-white flex items-center px-3 focus-within:border-blue-500">
-                <input type="date"
-                       name="upload_date"
-                       value="{{ old('upload_date', now()->format('Y-m-d')) }}"
-                       class="w-full text-sm bg-transparent outline-none border-none p-0 m-0">
+            {{-- Grid Utama Form --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+
+                {{-- TANGGAL --}}
+                <div class="flex flex-col w-full">
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tanggal Data</label>
+                    <div class="h-11 w-full border border-slate-300 rounded-xl bg-white flex items-center px-3 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/40 transition">
+                        <input type="date"
+                               name="upload_date"
+                               value="{{ old('upload_date', now()->format('Y-m-d')) }}"
+                               class="w-full text-sm bg-transparent outline-none border-none p-0 m-0">
+                    </div>
+                </div>
+
+               {{-- FILE --}}
+                <div class="flex flex-col w-full">
+                    <label class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">File Excel / CSV</label>
+                    <div class="h-11 w-full border border-dashed border-slate-300 rounded-xl bg-slate-50/60 flex items-center px-3 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/40 transition">
+                        <input type="file"
+                               name="file"
+                               class="w-full text-xs text-slate-500 outline-none border-none p-0 m-0 cursor-pointer
+                                      file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0
+                                      file:text-xs file:font-semibold file:bg-sky-100 file:text-sky-700
+                                      hover:file:bg-sky-200 file:cursor-pointer transition">
+                    </div>
+                </div>
+
+                {{-- BUTTON --}}
+                <div class="w-full">
+                    <button type="submit"
+                            class="h-11 w-full bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm hover:shadow transition">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3"/>
+                        </svg>
+                        Upload Sekarang
+                    </button>
+                </div>
+
             </div>
-        </div>
 
-       {{-- FILE --}}
-        <div class="flex flex-col w-full">
-            <label class="text-xs text-slate-500 mb-1">File Excel / CSV</label>
-            <div class="h-[42px] w-full border border-slate-300 rounded-lg bg-white flex items-center px-3">
-                <input type="file"
-                       name="file"
-                       class="w-full text-sm outline-none border-none p-0 m-0 cursor-pointer">
+            {{-- Teks Bantuan --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                <div class="md:col-start-2">
+                    <p class="text-[11px] text-slate-400">
+                        Format: .xlsx, .xls, atau .csv (maks 20MB)
+                    </p>
+                </div>
             </div>
-        </div>
+        </form>
 
-        {{-- BUTTON --}}
-        <div class="w-full">
-            <button type="submit"
-                    class="h-[42px] w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg flex items-center justify-center shadow-sm transition-colors">
-                Upload Sekarang
-            </button>
-        </div>
-
-    </div>
-
-    {{-- Teks Bantuan --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-1">
-        <div class="md:col-start-2">
-            <p class="text-[11px] text-slate-400">
-                Format: .xlsx, .xls, atau .csv (maks 20MB)
+        <div class="mt-5 flex gap-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs leading-relaxed rounded-xl px-4 py-3.5">
+            <svg class="w-4 h-4 shrink-0 mt-0.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <p>
+                <strong>Catatan:</strong> Jika tanggal yang dipilih sudah pernah diupload sebelumnya, data lama untuk tanggal
+                tersebut akan <strong>digantikan</strong> dengan file baru ini (bukan ditambah dobel). Data tanggal-tanggal lain
+                tidak akan terpengaruh dan tetap tersimpan.
             </p>
-        </div>
-    </div>
-</form>
-
-        <div class="mt-4 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-lg px-4 py-3">
-            <strong>Catatan:</strong> Jika tanggal yang dipilih sudah pernah diupload sebelumnya, data lama untuk tanggal
-            tersebut akan <strong>digantikan</strong> dengan file baru ini (bukan ditambah dobel). Data tanggal-tanggal lain
-            tidak akan terpengaruh dan tetap tersimpan.
         </div>
     </div>
 
     {{-- ================= UPLOAD DATA REFERENSI PETUGAS (NAMA & KECAMATAN) ================= --}}
-<div class="bg-white rounded-xl border border-slate-200 p-5 md:p-6">
-    <h2 class="font-semibold text-slate-700 mb-1">Upload Data Referensi Petugas</h2>
-    <p class="text-xs text-slate-400 mb-4">
-        File berisi <strong>petugas_username</strong>, <strong>Nama Petugas</strong>, <strong>Kode Kec</strong>,
-        dan <strong>Kecamatan</strong>. Data ini bersifat master/referensi (bukan harian) — setiap upload akan
-        mengantikan seluruh data referensi sebelumnya. Data ini dipakai untuk menampilkan kolom "Nama" dan
-        "Kecamatan" di Dashboard, dan <strong>cukup diupload sekali saja</strong> (upload ulang hanya kalau ada
-        petugas baru / pindah kecamatan). Saat ini tersimpan <strong>{{ number_format($referenceCount) }} petugas</strong> di referensi.
-    </p>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h2 class="font-semibold text-slate-800 mb-1">Upload Data Referensi Petugas</h2>
+        <p class="text-xs text-slate-400 leading-relaxed mb-5 max-w-3xl">
+            File berisi <strong class="text-slate-500">petugas_username</strong>, <strong class="text-slate-500">Nama Petugas</strong>, <strong class="text-slate-500">Kode Kec</strong>,
+            dan <strong class="text-slate-500">Kecamatan</strong>. Data ini bersifat master/referensi (bukan harian) — setiap upload akan
+            menggantikan seluruh data referensi sebelumnya. Data ini dipakai untuk menampilkan kolom "Nama" dan
+            "Kecamatan" di Dashboard, dan <strong class="text-slate-500">cukup diupload sekali saja</strong> (upload ulang hanya kalau ada
+            petugas baru / pindah kecamatan). Saat ini tersimpan <strong class="text-slate-600">{{ number_format($referenceCount) }} petugas</strong> di referensi.
+        </p>
 
-    <form action="{{ route('references.store') }}" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-3 gap-4 items-end">
-        @csrf
+        <form action="{{ route('references.store') }}" method="POST" enctype="multipart/form-data" class="grid md:grid-cols-3 gap-4 items-end">
+            @csrf
 
-        <div class="flex flex-col w-full md:col-span-2">
-            <label class="block text-xs font-medium text-slate-500 mb-1">File Referensi (Excel/CSV)</label>
-            <div class="h-[42px] w-full border border-slate-300 rounded-lg bg-white flex items-center px-3 focus-within:border-blue-500">
-                <input type="file" name="reference_file" required accept=".xlsx,.xls,.csv,.txt"
-                       class="w-full text-sm outline-none border-none p-0 m-0 cursor-pointer">
+            <div class="flex flex-col w-full md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">File Referensi (Excel/CSV)</label>
+                <div class="h-11 w-full border border-dashed border-slate-300 rounded-xl bg-slate-50/60 flex items-center px-3 focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-400/30 transition">
+                    <input type="file" name="reference_file" required accept=".xlsx,.xls,.csv,.txt"
+                           class="w-full text-xs text-slate-500 outline-none border-none p-0 m-0 cursor-pointer
+                                  file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0
+                                  file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-700
+                                  hover:file:bg-slate-300 file:cursor-pointer transition">
+                </div>
             </div>
-        </div>
 
-        <div class="w-full">
-            <button type="submit"
-                    class="h-[42px] w-full bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3"/>
-                </svg>
-                Update Referensi
-            </button>
-        </div>
-    </form>
-</div>
+            <div class="w-full">
+                <button type="submit"
+                        class="h-11 w-full border border-slate-300 hover:bg-slate-50 hover:border-slate-400 text-slate-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Update Referensi
+                </button>
+            </div>
+        </form>
+    </div>
 
     {{-- ================= RIWAYAT UPLOAD ================= --}}
-    <div class="bg-white rounded-xl border border-slate-200">
-        <div class="p-5 md:p-6 border-b border-slate-200 flex items-center justify-between">
-            <h2 class="font-semibold text-slate-700">Riwayat Upload</h2>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 class="font-semibold text-slate-800">Riwayat Upload</h2>
             <span class="text-xs text-slate-400">{{ $uploads->count() }} file tersimpan</span>
         </div>
 
         <div class="table-scroll">
             <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider">
                     <tr>
-                        <th class="text-left px-5 py-3 font-medium">Tanggal Data</th>
-                        <th class="text-left px-5 py-3 font-medium">Nama File</th>
-                        <th class="text-left px-5 py-3 font-medium">Jumlah Baris</th>
-                        <th class="text-left px-5 py-3 font-medium">Diupload Pada</th>
-                        <th class="text-right px-5 py-3 font-medium">Aksi</th>
+                        <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Tanggal Data</th>
+                        <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Nama File</th>
+                        <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Jumlah Baris</th>
+                        <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Diupload Pada</th>
+                        <th class="text-right px-6 py-4 font-bold whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($uploads as $upload)
-                        <tr class="hover:bg-slate-50">
-                            <td class="px-5 py-3 font-medium text-slate-700">{{ $upload->upload_date->translatedFormat('d F Y') }}</td>
-                            <td class="px-5 py-3 text-slate-500">{{ $upload->original_filename }}</td>
-                            <td class="px-5 py-3 text-slate-500">{{ number_format($upload->total_rows) }}</td>
-                            <td class="px-5 py-3 text-slate-500">{{ $upload->created_at->translatedFormat('d M Y H:i') }}</td>
-                            <td class="px-5 py-3 text-right">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-3.5 font-medium text-slate-700 whitespace-nowrap">{{ $upload->upload_date->translatedFormat('d F Y') }}</td>
+                            <td class="px-6 py-3.5 text-slate-500">{{ $upload->original_filename }}</td>
+                            <td class="px-6 py-3.5 text-slate-500">{{ number_format($upload->total_rows) }}</td>
+                            <td class="px-6 py-3.5 text-slate-500 whitespace-nowrap">{{ $upload->created_at->translatedFormat('d M Y H:i') }}</td>
+                            <td class="px-6 py-3.5 text-right whitespace-nowrap">
                                 <a href="{{ route('dashboard', ['tanggal' => $upload->upload_date->format('Y-m-d')]) }}"
-                                   class="text-blue-600 hover:underline text-xs font-medium mr-3">Lihat di Dashboard</a>
+                                   class="text-sky-600 hover:text-sky-700 hover:underline text-xs font-semibold mr-4">Lihat di Dashboard</a>
                                 <form action="{{ route('uploads.destroy', $upload) }}" method="POST" class="inline"
                                       onsubmit="return confirm('Hapus data tanggal {{ $upload->upload_date->format('d-m-Y') }}? Tindakan ini tidak bisa dibatalkan.');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:underline text-xs font-medium">Hapus</button>
+                                    <button type="submit" class="text-red-500 hover:text-red-700 hover:underline text-xs font-semibold">Hapus</button>
                                 </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-8 text-center text-slate-400">Belum ada data yang diupload.</td>
+                            <td colspan="5" class="px-6 py-10 text-center text-slate-400">Belum ada data yang diupload.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+
+</div>
 
 @endsection

@@ -1,274 +1,729 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Monitoring Petugas')
+@section('title', 'MAPS')
 
 @section('content')
 
-    {{-- ================= FILTER BAR ================= --}}
-    <form method="GET" action="{{ route('dashboard') }}"
-          class="bg-white rounded-xl border border-slate-200 p-4 md:p-5 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+<div class="space-y-6">
 
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Tanggal</label>
-            <select name="tanggal" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                @forelse ($availableDates as $date)
-                    <option value="{{ $date }}" {{ $selectedDate === $date ? 'selected' : '' }}>
-                        {{ \Illuminate\Support\Carbon::parse($date)->translatedFormat('d F Y') }}
-                    </option>
-                @empty
-                    <option value="">Belum ada data</option>
-                @endforelse
-            </select>
+    {{-- ================= FILTER ================= --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+        <div class="px-6 py-3.5 border-b bg-gradient-to-r from-sky-600 to-blue-700 text-white flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            </svg>
+            <h2 class="text-sm font-semibold">Pilih tanggal dan filter data yang ingin ditampilkan</h2>
         </div>
 
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Petugas</label>
-            <select name="petugas_username" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Semua Petugas</option>
-                @foreach ($petugasOptions as $p)
-                    <option value="{{ $p->petugas_username }}" {{ $filters['petugas_username'] === $p->petugas_username ? 'selected' : '' }}>
-                        {{ $p->nama_petugas ?: $p->petugas_username }}
-                    </option>
-                @endforeach
-            </select>
+        <form method="GET"
+              action="{{ route('dashboard') }}"
+              class="p-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-5">
+
+                {{-- Tanggal --}}
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        Tanggal
+                    </label>
+
+                    <select
+                        name="tanggal"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40 focus:outline-none transition">
+
+                        @forelse ($availableDates as $date)
+
+                            <option value="{{ $date }}"
+                                {{ $selectedDate == $date ? 'selected' : '' }}>
+
+                                {{ \Carbon\Carbon::parse($date)->translatedFormat('d F Y') }}
+
+                            </option>
+
+                        @empty
+
+                            <option>Belum ada data</option>
+
+                        @endforelse
+
+                    </select>
+                </div>
+
+                {{-- Petugas --}}
+                <div>
+
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        Petugas
+                    </label>
+
+                    <select
+                        name="petugas_username"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40 focus:outline-none transition">
+
+                        <option value="">Semua Petugas</option>
+
+                        @foreach($petugasOptions as $p)
+
+                            <option
+                                value="{{ $p->petugas_username }}"
+                                {{ $filters['petugas_username']==$p->petugas_username ? 'selected' : '' }}>
+
+                                {{ $p->nama_petugas ?: $p->petugas_username }}
+
+                            </option>
+
+                        @endforeach
+
+                    </select>
+
+                </div>
+
+                {{-- Kecamatan --}}
+                <div>
+
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        Kecamatan
+                    </label>
+
+                    <select
+                        name="nama_kecamatan"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40 focus:outline-none transition">
+
+                        <option value="">Semua Kecamatan</option>
+
+                        @foreach($kecamatanOptions as $kec)
+
+                            <option value="{{ $kec }}"
+                                {{ $filters['nama_kecamatan']==$kec ? 'selected' : '' }}>
+
+                                {{ $kec }}
+
+                            </option>
+
+                        @endforeach
+
+                    </select>
+
+                </div>
+
+                {{-- SLS --}}
+                <div>
+
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        SLS Code
+                    </label>
+
+                    <input
+                        type="text"
+                        name="sls_code"
+                        value="{{ $filters['sls_code'] }}"
+                        list="sls-suggestions"
+                        placeholder="Cari SLS..."
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/40 focus:outline-none transition">
+
+                    <datalist id="sls-suggestions">
+
+                        @foreach($slsOptions as $sls)
+
+                            <option value="{{ $sls }}"></option>
+
+                        @endforeach
+
+                    </datalist>
+
+                </div>
+
+                {{-- Button --}}
+                <div class="flex items-end gap-2">
+
+                    <button
+                        type="submit"
+                        class="flex-1 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold transition h-11 shadow-sm hover:shadow">
+
+                        Filter Data
+
+                    </button>
+
+                    @if($filters['petugas_username'] || $filters['petugas_role'] || $filters['sls_code'] || $filters['nama_kecamatan'])
+
+                    <a
+                        href="{{ route('dashboard',['tanggal'=>$selectedDate]) }}"
+                        class="rounded-xl border border-slate-300 px-4 h-11 flex items-center text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
+
+                        Reset
+
+                    </a>
+
+                    @endif
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    {{-- ================= EXPORT ================= --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+
+            <div>
+
+                <h3 class="text-lg font-semibold text-slate-800">
+                    Export Data
+                </h3>
+
+                <p class="text-sm text-slate-500 mt-1">
+                    Export data sesuai filter yang sedang dipilih.
+                </p>
+
+            </div>
+
+            <form method="GET"
+                  action="{{ route('export') }}"
+                  class="flex flex-wrap gap-4 items-end">
+
+                <input type="hidden" name="tanggal" value="{{ $selectedDate }}">
+                <input type="hidden" name="petugas_username" value="{{ $filters['petugas_username'] }}">
+                <input type="hidden" name="petugas_role" value="{{ $filters['petugas_role'] }}">
+                <input type="hidden" name="sls_code" value="{{ $filters['sls_code'] }}">
+                <input type="hidden" name="nama_kecamatan" value="{{ $filters['nama_kecamatan'] }}">
+
+                <div>
+
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        Cakupan
+                    </label>
+
+                    <select
+                        name="scope"
+                        class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 w-56 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/40 focus:outline-none transition">
+
+                        <option value="current">
+
+                            {{ $selectedDate
+                                ? \Carbon\Carbon::parse($selectedDate)->translatedFormat('d F Y')
+                                : '-' }}
+
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div>
+
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        Format
+                    </label>
+
+                    <select
+                        name="format"
+                        class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 w-36 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/40 focus:outline-none transition">
+
+                        <option value="xlsx">Excel</option>
+                        <option value="csv">CSV</option>
+
+                    </select>
+
+                </div>
+
+                <button
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 h-11 text-sm font-semibold shadow-sm hover:shadow transition">
+
+                    Export
+
+                </button>
+
+            </form>
+
         </div>
 
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Kecamatan</label>
-            <select name="nama_kecamatan" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Semua Kecamatan</option>
-                @foreach ($kecamatanOptions as $kec)
-                    <option value="{{ $kec }}" {{ $filters['nama_kecamatan'] === $kec ? 'selected' : '' }}>{{ $kec }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">SLS Code</label>
-            <input type="text" name="sls_code" value="{{ $filters['sls_code'] }}" placeholder="Cari kode SLS..."
-                   list="sls-suggestions"
-                   class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <datalist id="sls-suggestions">
-                @foreach ($slsOptions as $sls)
-                    <option value="{{ $sls }}"></option>
-                @endforeach
-            </datalist>
-        </div>
-
-        <div class="flex gap-2">
-            <button type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg px-4 py-2.5 flex items-center justify-center gap-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                Filter
-            </button>
-            @if($filters['petugas_username'] || $filters['petugas_role'] || $filters['sls_code'] || $filters['nama_kecamatan'])
-                <a href="{{ route('dashboard', ['tanggal' => $selectedDate]) }}"
-                   class="shrink-0 border border-slate-300 text-slate-500 text-sm rounded-lg px-3 py-2.5 hover:bg-slate-50">Reset</a>
-            @endif
-        </div>
-    </form>
-
-    {{-- ================= EXPORT DATA ================= --}}
-    <form method="GET" action="{{ route('export') }}"
-          class="bg-white rounded-xl border border-slate-200 p-4 md:p-5 flex flex-col md:flex-row md:items-end gap-4">
-
-        <input type="hidden" name="tanggal" value="{{ $selectedDate }}">
-        <input type="hidden" name="petugas_username" value="{{ $filters['petugas_username'] }}">
-        <input type="hidden" name="petugas_role" value="{{ $filters['petugas_role'] }}">
-        <input type="hidden" name="sls_code" value="{{ $filters['sls_code'] }}">
-        <input type="hidden" name="nama_kecamatan" value="{{ $filters['nama_kecamatan'] }}">
-
-        <div class="flex-1">
-            <p class="text-xs font-bold text-slate-700 uppercase mb-3">Export Data</p>
-        </div>
-
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Cakupan Tanggal</label>
-            <select name="scope" class="w-full md:w-56 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="current">Tanggal Terpilih ({{ $selectedDate ? \Illuminate\Support\Carbon::parse($selectedDate)->translatedFormat('d M Y') : '-' }})</option>
-            </select>
-        </div>
-
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Format File</label>
-            <select name="format" class="w-full md:w-36 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="xlsx">Excel (.xlsx)</option>
-                <option value="csv">CSV (.csv)</option>
-            </select>
-        </div>
-
-        <div>
-            <button type="submit"
-                    class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg px-5 py-2.5 flex items-center justify-center gap-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Export
-            </button>
-        </div>
-    </form>
+    </div>
 
     @if (empty($availableDates) || $availableDates->isEmpty())
-        <div class="bg-white rounded-xl border border-slate-200 p-10 text-center">
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-14 text-center">
+            <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
+                <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V4a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V20a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
             <p class="text-slate-500 mb-3">Belum ada data yang diupload.</p>
             <a href="{{ route('uploads.index') }}" class="text-blue-600 font-medium hover:underline">Upload file pertama Anda &rarr;</a>
         </div>
+
     @else
 
-        {{-- ================= KPI HIGHLIGHT CARDS ================= --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="space-y-6">
 
-            <div class="rounded-xl p-6 text-white" style="background: linear-gradient(135deg, #0ea5e9 0%, #0d9488 100%);">
-                <div class="text-sm font-bold uppercase tracking-widest mb-2">% Non Open</div>
-                <div class="text-5xl font-bold mb-3">{{ $summary['pct_non_open'] }}%</div>
-                <div class="text-xs opacity-70">{{ number_format($summary['non_open']) }} dari {{ number_format($summary['total']) }} assignment sudah bergerak dari status Open</div>
+        {{-- ================= KPI HIGHLIGHT ================= --}}
+        <div class="grid md:grid-cols-2 gap-5">
+
+            {{-- ================= NON OPEN ================= --}}
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-600 p-6 shadow-md">
+
+                <div class="absolute -right-12 -bottom-12 w-44 h-44 rounded-full bg-white/10"></div>
+                <div class="absolute right-8 top-8 w-20 h-20 rounded-full border border-white/10"></div>
+
+                <div class="relative z-10">
+
+                    <p class="text-sky-100 text-xs font-semibold uppercase tracking-widest">
+                        % Non Open
+                    </p>
+
+                    <div class="mt-2 text-5xl font-extrabold text-white">
+                        {{ $summary['pct_non_open'] }}%
+                    </div>
+
+                </div>
+
+                <div class="relative z-10 mt-5 border-t border-white/20 pt-4">
+
+                    <p class="text-sm text-sky-100 leading-relaxed">
+
+                        <strong class="text-white">
+                            {{ number_format($summary['non_open']) }}
+                        </strong>
+
+                        dari
+
+                        <strong class="text-white">
+                            {{ number_format($summary['total']) }}
+                        </strong>
+
+                        assignment telah keluar dari status
+                        <strong class="text-white">Open</strong>.
+
+                    </p>
+
+                </div>
+
             </div>
 
-            <div class="rounded-xl p-6 text-white" style="background: linear-gradient(135deg, #f97316 0%, #eab308 100%);">
-                <div class="text-sm font-bold uppercase tracking-widest mb-2">% Non Open & Draft</div>
-                <div class="text-5xl font-bold mb-3">{{ $summary['pct_submitted'] }}%</div>
-                <div class="text-xs opacity-70">{{ number_format($summary['submit_plus']) }} dari {{ number_format($summary['total']) }} assignment sudah Submitted, Approved, atau Rejected</div>
+
+            {{-- ================= NON OPEN & DRAFT ================= --}}
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-700 p-6 shadow-md">
+
+                <div class="absolute -right-12 -bottom-12 w-44 h-44 rounded-full bg-white/10"></div>
+                <div class="absolute right-8 top-8 w-20 h-20 rounded-full border border-white/10"></div>
+
+                <div class="relative z-10">
+
+                    <p class="text-teal-100 text-xs font-semibold uppercase tracking-widest">
+                        % Non Open & Draft
+                    </p>
+
+                    <div class="mt-2 text-5xl font-extrabold text-white">
+                        {{ $summary['pct_submitted'] }}%
+                    </div>
+
+                </div>
+
+                <div class="relative z-10 mt-5 border-t border-white/20 pt-4">
+
+                    <p class="text-sm text-teal-100 leading-relaxed">
+
+                        <strong class="text-white">
+                            {{ number_format($summary['submit_plus']) }}
+                        </strong>
+
+                        assignment telah mencapai status
+
+                        <strong class="text-white">
+                            Submitted
+                        </strong>,
+
+                        <strong class="text-white">
+                            Approved
+                        </strong>
+
+                        atau
+
+                        <strong class="text-white">
+                            Rejected
+                        </strong>.
+
+                    </p>
+
+                </div>
+
             </div>
 
         </div>
 
         {{-- ================= KPI CARDS ================= --}}
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div>
 
-            <div class="kpi-card">
-                <div class="kpi-icon shrink-0 mb-2" style="background:#2563eb">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5">
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 h-full">
+
+                    <div class="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center mb-4">
+
+                        <svg class="w-5 h-5 text-slate-600"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor"
+                             stroke-width="2">
+
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+
+                        </svg>
+
+                    </div>
+
+                    <div class="text-sm font-extrabold uppercase tracking-wide text-slate-600">
+                        Total Assignment
+                    </div>
+
+                    <div class="mt-2 text-2xl font-bold text-slate-800">
+                        {{ number_format($summary['total']) }}
+                    </div>
+
+                    <div class="mt-4">
+                        @include('dashboard.partials.delta', ['delta' => $comparison['total'] ?? null])
+                    </div>
+
                 </div>
-                <div class="text-xs font-semibold text-blue-600 uppercase mb-1">Total Assignment</div>
-                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['total']) }}</div>
-                @include('dashboard.partials.delta', ['delta' => $comparison['total'] ?? null])
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 h-full">
+
+                    <div class="w-11 h-11 rounded-xl bg-sky-100 flex items-center justify-center mb-4">
+
+                        <svg class="w-5 h-5 text-sky-600"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor"
+                             stroke-width="2">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                        </svg>
+
+                    </div>
+
+                    <div class="text-sm font-extrabold uppercase tracking-wide text-sky-600">
+                        Open
+                    </div>
+
+                    <div class="mt-2 text-2xl font-bold text-slate-800">
+                        {{ number_format($summary['open']) }}
+                    </div>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        {{ $summary['pct_open'] }}% dari total
+                    </p>
+
+                    <div class="mt-4">
+                        @include('dashboard.partials.delta', ['delta' => $comparison['open'] ?? null])
+                    </div>
+
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 h-full">
+
+                    <div class="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center mb-4">
+
+                        <svg class="w-5 h-5 text-amber-600"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor"
+                             stroke-width="2">
+
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V4a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V20a2 2 0 01-2 2z"/>
+
+                        </svg>
+
+                    </div>
+
+                    <div class="text-sm font-extrabold uppercase tracking-wide text-amber-600">
+                        Draft
+                    </div>
+
+                    <div class="mt-2 text-2xl font-bold text-slate-800">
+                        {{ number_format($summary['draft']) }}
+                    </div>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        {{ $summary['pct_draft'] }}% dari total
+                    </p>
+
+                    <div class="mt-4">
+                        @include('dashboard.partials.delta', ['delta' => $comparison['draft'] ?? null])
+                    </div>
+
+                </div>
+
+               <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 h-full">
+
+                    <div class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center mb-4">
+
+                        <svg class="w-5 h-5 text-blue-600"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor"
+                             stroke-width="2">
+
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+
+                        </svg>
+
+                    </div>
+
+                    <div class="text-sm font-extrabold uppercase tracking-wide text-blue-600">
+                        Submitted
+                    </div>
+
+                    <div class="mt-2 text-2xl font-bold text-slate-800">
+                        {{ number_format($summary['submitted']) }}
+                    </div>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        {{ $summary['pct_submitted_pencacah'] }}% dari total
+                    </p>
+
+                    <div class="mt-4">
+                        @include('dashboard.partials.delta', ['delta' => $comparison['submitted'] ?? null])
+                    </div>
+
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 h-full">
+
+                    <div class="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center mb-4">
+
+                        <svg class="w-5 h-5 text-emerald-600"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor"
+                             stroke-width="2">
+
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+
+                        </svg>
+
+                    </div>
+
+                    <div class="text-sm font-extrabold uppercase tracking-wide text-emerald-600">
+                        Approved
+                    </div>
+
+                    <div class="mt-2 text-2xl font-bold text-slate-800">
+                        {{ number_format($summary['approved']) }}
+                    </div>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        {{ $summary['pct_approved'] }}% dari total
+                    </p>
+
+                    <div class="mt-4">
+                        @include('dashboard.partials.delta', ['delta' => $comparison['approved'] ?? null])
+                    </div>
+
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 h-full">
+
+                    <div class="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center mb-4">
+
+                        <svg class="w-5 h-5 text-red-600"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor"
+                             stroke-width="2">
+
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M6 18L18 6M6 6l12 12"/>
+
+                        </svg>
+
+                    </div>
+
+                    <div class="text-sm font-extrabold uppercase tracking-wide text-red-600">
+                        Rejected
+                    </div>
+
+                    <div class="mt-2 text-2xl font-bold text-slate-800">
+                        {{ number_format($summary['rejected']) }}
+                    </div>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        {{ $summary['pct_rejected'] }}% dari total
+                    </p>
+
+                    <div class="mt-4">
+                        @include('dashboard.partials.delta', ['delta' => $comparison['rejected'] ?? null])
+                    </div>
+
+                </div>
             </div>
 
-            <div class="kpi-card">
-                <div class="kpi-icon shrink-0 mb-2" style="background:#16a34a">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                </div>
-                <div class="text-xs font-semibold text-green-600 uppercase mb-1">Open</div>
-                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['open']) }}</div>
-                <p class="text-xs text-slate-400">{{ $summary['pct_open'] }}% dari total</p>
-                @include('dashboard.partials.delta', ['delta' => $comparison['open'] ?? null])
-            </div>
+            @if ($comparison)
+                <p class="text-xs text-slate-400 mt-3">* Perbandingan dihitung terhadap data tanggal {{ $comparison['date'] }} (upload sebelumnya).</p>
+            @endif
 
-            <div class="kpi-card">
-                <div class="kpi-icon shrink-0 mb-2" style="background:#f59e0b">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V4a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V20a2 2 0 01-2 2z"/></svg>
-                </div>
-                <div class="text-xs font-semibold text-amber-600 uppercase mb-1">Draft</div>
-                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['draft']) }}</div>
-                <p class="text-xs text-slate-400">{{ $summary['pct_draft'] }}% dari total</p>
-                @include('dashboard.partials.delta', ['delta' => $comparison['draft'] ?? null])
-            </div>
-
-            <div class="kpi-card">
-                <div class="kpi-icon shrink-0 mb-2" style="background:#7c3aed">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                </div>
-                <div class="text-xs font-semibold text-violet-600 uppercase mb-1">Submitted</div>
-                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['submitted']) }}</div>
-                <p class="text-xs text-slate-400">{{ $summary['pct_submitted_pencacah'] }}% dari total</p>
-                @include('dashboard.partials.delta', ['delta' => $comparison['submitted'] ?? null])
-            </div>
-
-            <div class="kpi-card">
-                <div class="kpi-icon shrink-0 mb-2" style="background:#0d9488">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-                <div class="text-xs font-semibold text-teal-600 uppercase mb-1">Approved</div>
-                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['approved']) }}</div>
-                <p class="text-xs text-slate-400">{{ $summary['pct_approved'] }}% dari total</p>
-                @include('dashboard.partials.delta', ['delta' => $comparison['approved'] ?? null])
-            </div>
-
-            <div class="kpi-card">
-                <div class="kpi-icon shrink-0 mb-2" style="background:#e11d48">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                </div>
-                <div class="text-xs font-semibold text-rose-600 uppercase mb-1">Rejected</div>
-                <div class="text-xl font-bold text-slate-800 truncate">{{ number_format($summary['rejected']) }}</div>
-                <p class="text-xs text-slate-400">{{ $summary['pct_rejected'] }}% dari total</p>
-                @include('dashboard.partials.delta', ['delta' => $comparison['rejected'] ?? null])
-            </div>
         </div>
 
-        @if ($comparison)
-            <p class="text-xs text-slate-400 -mt-2">* Perbandingan dihitung terhadap data tanggal {{ $comparison['date'] }} (upload sebelumnya).</p>
-        @endif
-
         {{-- ================= GRAFIK ================= --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5">
-                <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Tren Status Assignment (Histori Semua Tanggal)</h3>
-                <canvas id="trendChart" height="260"></canvas>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-200">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Tren Status Assignment (Histori Semua Tanggal)</h3>
+                </div>
+                <div class="p-5">
+                    <canvas id="trendChart" height="260"></canvas>
+                </div>
             </div>
-            <div class="bg-white rounded-xl border border-slate-200 p-5">
-                <h3 class="text-xs font-bold text-slate-500 uppercase mb-4">Komposisi Status Hari Ini</h3>
-                <canvas id="donutChart" height="260"></canvas>
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-200">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Komposisi Status Hari Ini</h3>
+                </div>
+                <div class="p-5">
+                    <canvas id="donutChart" height="260"></canvas>
+                </div>
             </div>
         </div>
 
         {{-- ================= TABEL PER PETUGAS (DIKELOMPOKKAN PER KECAMATAN) ================= --}}
-        <div class="bg-white rounded-xl border border-slate-200">
-            <div class="p-5 border-b border-slate-200">
-                <h3 class="text-xs font-bold text-slate-500 uppercase">
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">
                     Ringkasan Status Assignment per Petugas
                     ({{ \Illuminate\Support\Carbon::parse($selectedDate)->translatedFormat('d F Y') }})
                 </h3>
             </div>
             <div class="table-scroll">
                 <table class="w-full text-sm">
-                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
-                        <tr>
-                            <th class="text-left px-5 py-3 font-medium">#</th>
-                            <th class="text-left px-5 py-3 font-medium">Petugas / Kecamatan</th>
-                            <th class="text-right px-5 py-3 font-medium">Total Assignment</th>
-                            <th class="text-right px-5 py-3 font-medium text-green-600">Open</th>
-                            <th class="text-right px-5 py-3 font-medium text-amber-600">Draft</th>
-                            <th class="text-right px-5 py-3 font-medium text-violet-600">Submitted</th>
-                            <th class="text-right px-5 py-3 font-medium text-teal-600">Approved</th>
-                            <th class="text-right px-5 py-3 font-medium text-rose-600">Rejected</th>
-                            <th class="text-right px-5 py-3 font-medium text-slate-600">Non Open</th>
-                            <th class="text-right px-5 py-3 font-medium text-slate-600">Submit+</th>
-                            <th class="text-right px-5 py-3 font-medium text-slate-600">% Non Open</th>
-                            <th class="text-right px-5 py-3 font-medium text-slate-600">% Non Open & Draft</th>
-                        </tr>
+                   <thead class="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 sticky top-0 z-10">
+                       <tr>
+    <th class="text-left px-5 py-4 font-bold whitespace-nowrap">#</th>
+
+    <th class="text-left px-5 py-4 font-bold whitespace-nowrap">
+        Petugas / Kecamatan
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold whitespace-nowrap">
+        Total Assignment
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-sky-600 whitespace-nowrap">
+        Open
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-amber-600 whitespace-nowrap">
+        Draft
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-blue-600 whitespace-nowrap">
+        Submitted
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-emerald-600 whitespace-nowrap">
+        Approved
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-red-600 whitespace-nowrap">
+        Rejected
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-slate-600 whitespace-nowrap">
+        Non Open
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-indigo-600 whitespace-nowrap">
+        Submit+
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-cyan-600 whitespace-nowrap">
+        % Non Open
+    </th>
+
+    <th class="text-right px-5 py-4 font-bold text-teal-600 whitespace-nowrap">
+        % Non Open & Draft
+    </th>
+</tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse ($perPetugasGrouped as $group)
-                            <tr class="bg-blue-50/60">
-                                <td class="px-5 py-2.5"></td>
-                                <td class="px-5 py-2.5 font-bold text-slate-700">{{ $group['label'] }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-slate-700">{{ number_format($group['subtotal']['total_assignment']) }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-green-700">{{ number_format($group['subtotal']['status_open']) }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-amber-700">{{ number_format($group['subtotal']['status_draft']) }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-violet-700">{{ number_format($group['subtotal']['status_submitted_pencacah']) }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-teal-700">{{ number_format($group['subtotal']['status_approved_pengawas']) }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-rose-700">{{ number_format($group['subtotal']['status_rejected_pengawas']) }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-slate-700">{{ number_format($group['subtotal']['status_non_open']) }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-slate-700">{{ number_format($group['subtotal']['status_submit_plus']) }}</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-slate-700">{{ $group['subtotal']['pct_non_open'] }}%</td>
-                                <td class="px-5 py-2.5 text-right font-bold text-slate-700">{{ $group['subtotal']['pct_submitted'] }}%</td>
+                            <tr class="bg-sky-50/70 border-y border-sky-100">
+
+                            <td class="px-5 py-3"></td>
+                                <td class="px-5 py-3 font-bold text-sky-800">
+                                📍 {{ $group['label'] }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-bold text-slate-800">
+                                {{ number_format($group['subtotal']['total_assignment']) }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-sky-600">
+                                {{ number_format($group['subtotal']['status_open']) }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-amber-600">
+                                {{ number_format($group['subtotal']['status_draft']) }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-blue-600">
+                                {{ number_format($group['subtotal']['status_submitted_pencacah']) }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-emerald-600">
+                                {{ number_format($group['subtotal']['status_approved_pengawas']) }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-red-600">
+                                {{ number_format($group['subtotal']['status_rejected_pengawas']) }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-slate-600">
+                                {{ number_format($group['subtotal']['status_non_open']) }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-indigo-600">
+                                {{ number_format($group['subtotal']['status_submit_plus']) }}
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-cyan-700">
+                                {{ $group['subtotal']['pct_non_open'] }}%
+                                </td>
+
+                                <td class="px-5 py-3 text-right font-semibold text-teal-700">
+                                {{ $group['subtotal']['pct_submitted'] }}%
+                                </td>
+
                             </tr>
 
                             @foreach ($group['petugas'] as $i => $row)
-                                <tr class="hover:bg-slate-50">
+                                <tr class="hover:bg-slate-50 transition-colors">
                                     <td class="px-5 py-3 text-slate-400">{{ $i + 1 }}</td>
                                     <td class="px-5 py-3">
                                         <div class="font-medium text-slate-700">{{ $row->nama_petugas ?: $row->petugas_username }}</div>
                                         <div class="text-xs text-slate-400">{{ $row->petugas_username }}</div>
                                     </td>
-                                    <td class="px-5 py-3 text-right font-medium text-slate-700">{{ number_format($row->total_assignment) }}</td>
-                                    <td class="px-5 py-3 text-right text-green-600">{{ number_format($row->status_open) }}</td>
-                                    <td class="px-5 py-3 text-right text-amber-600">{{ number_format($row->status_draft) }}</td>
-                                    <td class="px-5 py-3 text-right text-violet-600">{{ number_format($row->status_submitted_pencacah) }}</td>
-                                    <td class="px-5 py-3 text-right text-teal-600">{{ number_format($row->status_approved_pengawas) }}</td>
-                                    <td class="px-5 py-3 text-right text-rose-600">{{ number_format($row->status_rejected_pengawas) }}</td>
-                                    <td class="px-5 py-3 text-right text-slate-600">{{ number_format($row->status_non_open) }}</td>
-                                    <td class="px-5 py-3 text-right text-slate-600">{{ number_format($row->status_submit_plus) }}</td>
-                                    <td class="px-5 py-3 text-right text-slate-600">{{ $row->pct_non_open }}%</td>
-                                    <td class="px-5 py-3 text-right text-slate-600">{{ $row->pct_submitted }}%</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-slate-800">{{ number_format($row->total_assignment) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-sky-600">{{ number_format($row->status_open) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-amber-600">{{ number_format($row->status_draft) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-blue-600">{{ number_format($row->status_submitted_pencacah) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-emerald-600">{{ number_format($row->status_approved_pengawas) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-red-600">{{ number_format($row->status_rejected_pengawas) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-slate-600">{{ number_format($row->status_non_open) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-indigo-600">{{ number_format($row->status_submit_plus) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-cyan-700">{{ $row->pct_non_open }}%</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-teal-700">{{ $row->pct_submitted }}%</td>
                                 </tr>
                             @endforeach
                         @empty
@@ -279,16 +734,16 @@
                             <tr class="bg-slate-800">
                                 <td class="px-5 py-3"></td>
                                 <td class="px-5 py-3 font-bold text-white">GRAND TOTAL</td>
-                                <td class="px-5 py-3 text-right font-bold text-white">{{ number_format($summary['total']) }}</td>
-                                <td class="px-5 py-3 text-right font-bold text-green-300">{{ number_format($summary['open']) }}</td>
+                                <td class="px-5 py-3 text-right font-bold text-slate-300">{{ number_format($summary['total']) }}</td>
+                                <td class="px-5 py-3 text-right font-bold text-red-300">{{ number_format($summary['open']) }}</td>
                                 <td class="px-5 py-3 text-right font-bold text-amber-300">{{ number_format($summary['draft']) }}</td>
-                                <td class="px-5 py-3 text-right font-bold text-violet-300">{{ number_format($summary['submitted']) }}</td>
-                                <td class="px-5 py-3 text-right font-bold text-teal-300">{{ number_format($summary['approved']) }}</td>
-                                <td class="px-5 py-3 text-right font-bold text-rose-300">{{ number_format($summary['rejected']) }}</td>
-                                <td class="px-5 py-3 text-right font-bold text-slate-200">{{ number_format($summary['non_open']) }}</td>
-                                <td class="px-5 py-3 text-right font-bold text-slate-200">{{ number_format($summary['submit_plus']) }}</td>
-                                <td class="px-5 py-3 text-right font-bold text-slate-200">{{ $summary['pct_non_open'] }}%</td>
-                                <td class="px-5 py-3 text-right font-bold text-white">{{ $summary['pct_submitted'] }}%</td>
+                                <td class="px-5 py-3 text-right font-bold text-blue-300">{{ number_format($summary['submitted']) }}</td>
+                                <td class="px-5 py-3 text-right font-bold text-emerald-300">{{ number_format($summary['approved']) }}</td>
+                                <td class="px-5 py-3 text-right font-bold text-orange-300">{{ number_format($summary['rejected']) }}</td>
+                                <td class="px-5 py-3 text-right font-bold text-slate-300">{{ number_format($summary['non_open']) }}</td>
+                                <td class="px-5 py-3 text-right font-bold text-indigo-300">{{ number_format($summary['submit_plus']) }}</td>
+                                <td class="px-5 py-3 text-right font-bold text-sky-300">{{ $summary['pct_non_open'] }}%</td>
+                                <td class="px-5 py-3 text-right font-bold text-teal-300">{{ $summary['pct_submitted'] }}%</td>
                             </tr>
                         @endif
                     </tbody>
@@ -299,7 +754,11 @@
             </div>
         </div>
 
+    </div>
+
     @endif
+
+</div>
 
     <script id="dashboard-data" type="application/json">
         {!! json_encode([

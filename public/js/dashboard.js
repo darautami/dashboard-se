@@ -7,12 +7,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const summary = payload.summary;
 
     const COLORS = {
-        total: '#2563eb',
-        open: '#16a34a',
-        draft: '#f59e0b',
-        submitted: '#7c3aed',
-        approved: '#0d9488',
-        rejected: '#e11d48',
+        total: '#64748b',
+        open: '#0ea5e9',
+        draft: '#d97706',
+        submitted: '#2563eb',
+        approved: '#059669',
+        rejected: '#ef4444',
     };
 
     // ---------------- Trend Line Chart ----------------
