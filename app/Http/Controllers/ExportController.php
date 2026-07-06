@@ -372,7 +372,7 @@ class ExportController extends Controller
         $sheet = $useActiveSheet ? $spreadsheet->getActiveSheet() : $spreadsheet->createSheet();
         $sheet->setTitle('Rekap Kecamatan');
 
-        $headers = ['Row Labels', 'ASSIGNMENT', 'OPEN', 'DRAFT', 'SUBMIT', 'APPROVE', 'REJECT', 'NON OPEN', 'SUBMIT+', '% NON OPEN', '% NON OPEN & DRAF'];
+        $headers = ['Row Labels', 'ASSIGNMENT', 'OPEN', 'DRAFT', 'SUBMIT', 'APPROVE', 'REJECT', 'NON OPEN', 'SUBMIT+', '% NON OPEN', '% SELAIN OPEN & DRAF'];
         $sheet->fromArray($headers, null, 'A1');
         $sheet->getStyle('A1:K1')->getFont()->setBold(true);
 
@@ -453,10 +453,6 @@ class ExportController extends Controller
         $sheet->freezePane('A2');
     }
 
-    /**
-     * Tulis 1 baris di sheet Rekap Kecamatan, memakai formula Excel asli untuk kolom
-     * ASSIGNMENT, NON OPEN, SUBMIT+, % NON OPEN, % SUBMIT (mengikuti format Sheet3 contoh).
-     */
     private function writeKecamatanRecapRow(
         $sheet, int $row, string $label, int $open, int $draft, int $submit, int $approve, int $reject, bool $bold
     ): void {
@@ -480,9 +476,6 @@ class ExportController extends Controller
         }
     }
 
-    /**
-     * Konversi nomor kolom (1, 2, 3, ...) jadi huruf kolom Excel (A, B, ..., Z, AA, AB, ...).
-     */
     private function colLetter(int $colNumber): string
     {
         $letter = '';

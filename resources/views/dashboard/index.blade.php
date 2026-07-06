@@ -314,7 +314,7 @@
                 <div class="relative z-10">
 
                     <p class="text-teal-100 text-xs font-semibold uppercase tracking-widest">
-                        % Non Open & Draft
+                        % Selain Open & Draft
                     </p>
 
                     <div class="mt-2 text-5xl font-extrabold text-white">
@@ -652,7 +652,7 @@
     </th>
 
     <th class="text-right px-5 py-4 font-bold text-teal-600 whitespace-nowrap">
-        % Non Open & Draft
+        % Selain Open & Draft
     </th>
 </tr>
                     </thead>
