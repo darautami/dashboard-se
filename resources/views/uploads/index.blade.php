@@ -6,6 +6,10 @@
 
 @section('content')
 
+@php
+use Illuminate\Support\Facades\Storage;
+@endphp
+
 <div class="space-y-6">
 
     {{-- ================= UPLOAD DATA PROGRESS HARIAN ================= --}}
@@ -126,42 +130,193 @@
         <div class="table-scroll">
             <table class="w-full text-sm">
                 <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider">
-                    <tr>
-                        <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Tanggal Data</th>
-                        <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Nama File</th>
-                        <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Jumlah Baris</th>
-                        <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Diupload Pada</th>
-                        <th class="text-right px-6 py-4 font-bold whitespace-nowrap">Aksi</th>
-                    </tr>
+                <tr>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Tanggal Data</th>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Role</th>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Nama File</th>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Jumlah Baris</th>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Diupload Pada</th>
+                    <th class="text-right px-6 py-4 font-bold whitespace-nowrap">Aksi</th>
+                </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    @forelse ($uploads as $upload)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-3.5 font-medium text-slate-700 whitespace-nowrap">{{ $upload->upload_date->translatedFormat('d F Y') }}</td>
-                            <td class="px-6 py-3.5 text-slate-500">{{ $upload->original_filename }}</td>
-                            <td class="px-6 py-3.5 text-slate-500">{{ number_format($upload->total_rows) }}</td>
-                            <td class="px-6 py-3.5 text-slate-500 whitespace-nowrap">{{ $upload->created_at->translatedFormat('d M Y H:i') }}</td>
-                            <td class="px-6 py-3.5 text-right whitespace-nowrap">
-                                <a href="{{ route('dashboard', ['tanggal' => $upload->upload_date->format('Y-m-d')]) }}"
-                                   class="text-sky-600 hover:text-sky-700 hover:underline text-xs font-semibold mr-4">Lihat di Dashboard</a>
-                                <form action="{{ route('uploads.destroy', $upload) }}" method="POST" class="inline"
-                                      onsubmit="return confirm('Hapus data tanggal {{ $upload->upload_date->format('d-m-Y') }}? Tindakan ini tidak bisa dibatalkan.');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 hover:underline text-xs font-semibold">Hapus</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-10 text-center text-slate-400">Belum ada data yang diupload.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
+    @forelse ($uploads as $upload)
+        <tr class="hover:bg-slate-50 transition-colors">
+
+            {{-- Tanggal --}}
+            <td class="px-6 py-3.5 font-medium text-slate-700 whitespace-nowrap">
+                {{ $upload->upload_date->translatedFormat('d F Y') }}
+            </td>
+
+            {{-- Role --}}
+            <td class="px-6 py-3.5">
+                @if($upload->petugas_role == 'Pengawas')
+                    <span class="inline-flex px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                        Pengawas
+                    </span>
+                @elseif($upload->petugas_role == 'Pencacah')
+                    <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                        Pencacah
+                    </span>
+                @else
+                    <span class="inline-flex px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                        -
+                    </span>
+                @endif
+            </td>
+
+            {{-- Nama File --}}
+            <td class="px-6 py-3.5 text-slate-500">
+                {{ $upload->original_filename }}
+            </td>
+
+            {{-- Jumlah Baris --}}
+            <td class="px-6 py-3.5 text-slate-500">
+                {{ number_format($upload->total_rows) }}
+            </td>
+
+            {{-- Diupload Pada --}}
+            <td class="px-6 py-3.5 text-slate-500 whitespace-nowrap">
+                {{ $upload->created_at->translatedFormat('d M Y H:i') }}
+            </td>
+
+            {{-- Aksi --}}
+            <td class="px-6 py-3.5 text-right whitespace-nowrap">
+
+    @if($upload->file_path)
+        <a href="{{ route('uploads.download', $upload) }}"
+           class="text-sky-600 hover:text-sky-700 hover:underline text-xs font-semibold mr-4">
+            Lihat File
+        </a>
+    @endif
+
+    <a href="{{ route('dashboard', ['tanggal' => $upload->upload_date->format('Y-m-d')]) }}"
+       class="text-sky-600 hover:text-sky-700 hover:underline text-xs font-semibold mr-4">
+        Lihat di Dashboard
+    </a>
+
+    <form action="{{ route('uploads.destroy', $upload) }}"
+          method="POST"
+          class="inline">
+        @csrf
+        @method('DELETE')
+
+        <button type="submit"
+                class="text-red-500 hover:text-red-700 hover:underline text-xs font-semibold">
+            Hapus
+        </button>
+    </form>
+
+</td>
+
+        </tr>
+    @empty
+        <tr>
+            <td colspan="6" class="px-6 py-10 text-center text-slate-400">
+                Belum ada data yang diupload.
+            </td>
+        </tr>
+    @endforelse
+</tbody>
             </table>
         </div>
     </div>
 
+{{-- ================= RIWAYAT UPLOAD REFERENSI ================= --}}
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="font-semibold text-slate-800">Riwayat Upload Referensi</h2>
+        <span class="text-xs text-slate-400">{{ $referenceUploads->count() }} file tersimpan</span>
+    </div>
+
+    <div class="table-scroll">
+        <table class="w-full text-sm">
+
+            <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider">
+                <tr>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Role</th>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Nama File</th>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Jumlah Baris</th>
+                    <th class="text-left px-6 py-4 font-bold whitespace-nowrap">Diupload Pada</th>
+                    <th class="text-right px-6 py-4 font-bold whitespace-nowrap">Aksi</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-slate-100">
+                @forelse($referenceUploads as $item)
+                    <tr class="hover:bg-slate-50 transition-colors">
+
+                        {{-- Role --}}
+                        <td class="px-6 py-3.5">
+                            @if($item->petugas_role == 'Pengawas')
+                                <span class="inline-flex px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                                    Pengawas
+                                </span>
+                            @elseif($item->petugas_role == 'Pencacah')
+                                <span class="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                    Pencacah
+                                </span>
+                            @else
+                                <span class="inline-flex px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                                    -
+                                </span>
+                            @endif
+                        </td>
+
+                        {{-- Nama File --}}
+                        <td class="px-6 py-3.5 text-slate-500">
+                            {{ $item->original_filename }}
+                        </td>
+
+                        {{-- Jumlah Baris --}}
+                        <td class="px-6 py-3.5 text-slate-500">
+                            {{ number_format($item->total_rows) }}
+                        </td>
+
+                        {{-- Diupload Pada --}}
+                        <td class="px-6 py-3.5 text-slate-500 whitespace-nowrap">
+                            {{ $item->created_at->translatedFormat('d M Y H:i') }}
+                        </td>
+
+                       {{-- Aksi --}}
+<td class="px-6 py-3.5 text-right whitespace-nowrap">
+
+    {{-- Lihat File --}}
+    @if($item->file_path)
+        <a href="{{ route('reference-upload.download', $item) }}"
+           class="text-sky-600 hover:text-sky-700 hover:underline text-xs font-semibold mr-4">
+            Lihat File
+        </a>
+    @endif
+
+    {{-- Hapus --}}
+    <form action="{{ route('reference-upload.destroy', $item) }}"
+          method="POST"
+          class="inline"
+          onsubmit="return confirm('Yakin ingin menghapus riwayat upload referensi ini?')">
+        @csrf
+        @method('DELETE')
+
+        <button type="submit"
+                class="text-red-500 hover:text-red-700 hover:underline text-xs font-semibold">
+            Hapus
+        </button>
+    </form>
+
+</td>
+
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="5" class="px-6 py-10 text-center text-slate-400">
+                            Belum ada riwayat upload referensi.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+
+        </table>
+    </div>
 </div>
 
 @endsection

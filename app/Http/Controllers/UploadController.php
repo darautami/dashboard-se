@@ -9,15 +9,24 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Models\ReferenceUpload;
+use App\Models\PetugasReference;
 
 class UploadController extends Controller
 {
     public function index(): View
     {
         $uploads = Upload::orderByDesc('upload_date')->get();
-        $referenceCount = \App\Models\PetugasReference::count();
 
-        return view('uploads.index', compact('uploads', 'referenceCount'));
+$referenceUploads = ReferenceUpload::latest()->get();
+
+$referenceCount = PetugasReference::count();
+
+return view('uploads.index', compact(
+    'uploads',
+    'referenceUploads',
+    'referenceCount'
+));
     }
 
 public function store(Request $request): RedirectResponse
@@ -31,7 +40,11 @@ public function store(Request $request): RedirectResponse
 ]);
 
     $uploadDate = $request->input('upload_date');
+
     $file = $request->file('file');
+
+    $storedPath = $file->store('assignment_uploads', 'public');
+
     $extension = $file->getClientOriginalExtension();
     $fullPath = $file->getRealPath();
 
@@ -43,20 +56,44 @@ public function store(Request $request): RedirectResponse
 
     $map = $this->buildColumnMap($headers);
 
-    DB::transaction(function () use ($uploadDate, $rows, $map, $file) {
-        $existing = Upload::where('upload_date', $uploadDate)->first();
-        if ($existing) {
-            $existing->delete();
-        }
+    // Ambil role dari file excel
+$uploadRole = null;
 
-        $upload = Upload::create([
-            'upload_date' => $uploadDate,
-            'original_filename' => $file->getClientOriginalName(),
-            'total_rows' => count($rows),
-        ]);
+foreach ($rows as $row) {
+    $uploadRole = $this->val($row, $map, 'petugas_role');
 
-        $now = now();
-        $batch = [];
+    if (!empty($uploadRole)) {
+        break;
+    }
+}
+
+   DB::transaction(function () use (
+    $uploadDate,
+    $rows,
+    $map,
+    $file,
+    $uploadRole,
+    $storedPath
+) {
+    
+    $existing = Upload::where('upload_date', $uploadDate)
+        ->where('petugas_role', $uploadRole)
+        ->first();
+
+    if ($existing) {
+        $existing->delete();
+    }
+
+    $upload = Upload::create([
+    'upload_date'       => $uploadDate,
+    'petugas_role'      => $uploadRole,
+    'original_filename' => $file->getClientOriginalName(),
+    'file_path'         => $storedPath,
+    'total_rows'        => count($rows),
+    ]);
+
+    $now = now();
+    $batch = [];
 
         foreach ($rows as $row) {
             $batch[] = [
@@ -102,6 +139,14 @@ public function store(Request $request): RedirectResponse
 
         return redirect()->route('uploads.index')->with('success', 'Data berhasil dihapus.');
     }
+
+    public function download(Upload $upload)
+{
+    return \Storage::disk('public')->download(
+        $upload->file_path,
+        $upload->original_filename
+    );
+}
 
     private function buildColumnMap(array $headers): array
     {

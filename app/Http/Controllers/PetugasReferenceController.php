@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\PetugasReference;
+use App\Models\ReferenceUpload;      
 use App\Support\SpreadsheetReader;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PetugasReferenceController extends Controller
 {
@@ -19,6 +21,13 @@ class PetugasReferenceController extends Controller
         ]);
 
         $file = $request->file('reference_file');
+        $filename = time().'_'.$file->getClientOriginalName();
+
+            $path = $file->storeAs(
+                'reference_uploads',
+                $filename,
+                'public'
+            );
         $extension = $file->getClientOriginalExtension();
         [$headers, $rows] = SpreadsheetReader::read($file->getRealPath(), $extension);
 
@@ -27,6 +36,16 @@ class PetugasReferenceController extends Controller
         }
 
         $map = $this->buildColumnMap($headers);
+
+        $role = null;
+
+        foreach ($rows as $row) {
+            $role = $this->val($row, $map, 'petugas_role');
+
+            if (!empty($role)) {
+                break;
+            }
+        }
 
         if (! isset($map['petugas_username'])) {
             return back()->withErrors([
@@ -37,33 +56,44 @@ class PetugasReferenceController extends Controller
 
         $count = 0;
 
-        DB::transaction(function () use ($rows, $map, &$count) {
+       DB::transaction(function () use ($rows, $map, &$count, $role, $file, $path) {
 
-            PetugasReference::query()->delete();
+    if ($role) {
+        PetugasReference::where('petugas_role', $role)->delete();
+    }
 
-            $now = now();
-            $batch = [];
+    $now = now();
+    $batch = [];
 
-            foreach ($rows as $row) {
-                $username = $this->val($row, $map, 'petugas_username');
-                if (! $username) {
-                    continue;
-                }
+    foreach ($rows as $row) {
+        $username = $this->val($row, $map, 'petugas_username');
 
-                $batch[] = [
-                    'petugas_username' => $username,
-                    'nama_petugas'     => $this->val($row, $map, 'nama_petugas'),
-                    'kode_kecamatan'   => $this->val($row, $map, 'kode_kec'),
-                    'nama_kecamatan'   => $this->val($row, $map, 'nama_kecamatan'),
-                    'created_at'       => $now,
-                    'updated_at'       => $now,
-                ];
-                $count++;
-            }
+        if (!$username) {
+            continue;
+        }
+
+        $batch[] = [
+            'petugas_username' => $username,
+            'nama_petugas'     => $this->val($row, $map, 'nama_petugas'),
+            'kode_kecamatan'   => $this->val($row, $map, 'kode_kec'),
+            'nama_kecamatan'   => $this->val($row, $map, 'nama_kecamatan'),
+            'petugas_role'     => $role,
+            'created_at'       => $now,
+            'updated_at'       => $now,
+        ];
+
+        $count++;
+    }
 
             foreach (array_chunk($batch, 500) as $chunk) {
                 PetugasReference::insert($chunk);
             }
+            ReferenceUpload::create([
+                'petugas_role'      => $role,
+                'original_filename' => $file->getClientOriginalName(),
+                'file_path'         => $path,
+                'total_rows'        => $count,
+            ]);
         });
 
         return redirect()->route('uploads.index')
@@ -77,6 +107,7 @@ class PetugasReferenceController extends Controller
             'nama_petugas'     => ['nama_petugas', 'nama'],
             'kode_kec'         => ['kode_kec', 'kode_kecamatan'],
             'nama_kecamatan'   => ['nama_kecamatan', 'kecamatan'],
+            'petugas_role'     => ['petugas_role', 'role'],
         ];
 
         $map = [];

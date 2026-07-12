@@ -10,13 +10,11 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportController extends Controller
 {
     public function index(Request $request)
     {
-        $format = $request->input('format', 'xlsx'); // xlsx | csv
         $scope = $request->input('scope', 'current'); // current | all
 
         $filters = [
@@ -125,50 +123,29 @@ class ExportController extends Controller
             ];
         });
 
+        $role = strtolower($filters['petugas_role'] ?? '');
+
+        if ($role === 'pencacah') {
+            $prefix = 'pencacah';
+        } elseif ($role === 'pengawas') {
+            $prefix = 'pengawas';
+        } else {
+            $prefix = 'semua';
+        }
+
         $filenameLabel = $scope === 'all'
             ? 'semua-tanggal'
             : ($selectedDate ? Carbon::parse($selectedDate)->format('Y-m-d') : 'data');
 
-        $filenameBase = 'progress-assignment-'.$filenameLabel;
+        $filenameBase = $prefix . '-progress-assignment-' . $filenameLabel;
 
-        return $format === 'csv'
-            ? $this->exportCsv($exportRows, $filenameBase)
-            : $this->exportXlsx($exportRows, $filenameBase, $scope, $selectedDate, $filters);
-    }
-
-    private function headers(): array
-    {
-        return [
-            'Tanggal', 'Username Petugas', 'Nama Petugas', 'Kecamatan',
-            'Total Assignment', 'Open', 'Draft', 'Submitted by Pencacah',
-            'Approved by Pengawas', 'Rejected by Pengawas', 'Progress Approved (%)',
-            '% Gabungan Semua Status', '% Selain Open & Draft', '% Selain Open',
-        ];
-    }
-
-    private function exportCsv($rows, string $filenameBase): StreamedResponse
-    {
-        $filename = $filenameBase.'.csv';
-
-        return response()->streamDownload(function () use ($rows) {
-            $out = fopen('php://output', 'w');
-            // BOM agar karakter & Excel locale Indonesia terbaca dengan benar
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, $this->headers(), ';');
-
-            foreach ($rows as $r) {
-                fputcsv($out, [
-                    $r['tanggal'], $r['username'], $r['nama'], $r['kecamatan'],
-                    $r['total_assignment'], $r['open'], $r['draft'], $r['submitted'],
-                    $r['approved'], $r['rejected'], $r['progress'],
-                    $r['pct_semua'], $r['pct_selain_open_draft'], $r['pct_selain_open'],
-                ], ';');
-            }
-
-            fclose($out);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+return $this->exportXlsx(
+    $exportRows,
+    $filenameBase,
+    $scope,
+    $selectedDate,
+    $filters
+);
     }
 
     private function exportXlsx($rows, string $filenameBase, string $scope, ?string $selectedDate = null, array $filters = [])
@@ -177,8 +154,6 @@ class ExportController extends Controller
 
         $spreadsheet = new Spreadsheet();
 
-        // Sheet utama: Rekap per Kecamatan (untuk tanggal yang sedang dipilih).
-        // Sheet "Detail per Petugas" sengaja tidak dibuat sesuai permintaan -- cukup rekap ini saja.
         if ($selectedDate) {
             $this->addKecamatanRecapSheet($spreadsheet, $selectedDate, $filters, useActiveSheet: true);
         }
@@ -329,6 +304,9 @@ class ExportController extends Controller
     {
         $query = AssignmentSnapshot::query()
             ->where('upload_date', $selectedDate)
+            ->when($filters['petugas_role'] ?? null, function ($q, $v) {
+        $q->where('petugas_role', $v);
+    })
             ->selectRaw('
                 petugas_username,
                 MAX(kabupaten_code) as kabupaten_code,
@@ -372,9 +350,9 @@ class ExportController extends Controller
         $sheet = $useActiveSheet ? $spreadsheet->getActiveSheet() : $spreadsheet->createSheet();
         $sheet->setTitle('Rekap Kecamatan');
 
-        $headers = ['Row Labels', 'ASSIGNMENT', 'OPEN', 'DRAFT', 'SUBMIT', 'APPROVE', 'REJECT', 'NON OPEN', 'SUBMIT+', '% NON OPEN', '% SELAIN OPEN & DRAF'];
+        $headers = ['Row Labels', 'ASSIGNMENT', 'OPEN', 'DRAFT', 'SUBMIT', 'APPROVE', 'REJECT', 'NON OPEN', 'SUBMIT+', '% NON OPEN', '% SELAIN OPEN & DRAF', '% APPROVED'];
         $sheet->fromArray($headers, null, 'A1');
-        $sheet->getStyle('A1:K1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:L1')->getFont()->setBold(true);
 
         $rowIndex = 2;
         $grand = ['open' => 0, 'draft' => 0, 'submit' => 0, 'approve' => 0, 'reject' => 0]
@@ -445,11 +423,11 @@ class ExportController extends Controller
 
         $lastDataRow = $rowIndex;
 
-        foreach (range('A', 'K') as $col) {
+        foreach (range('A', 'L') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $sheet->setAutoFilter('A1:K'.$lastDataRow);
+        $sheet->setAutoFilter('A1:L'.$lastDataRow);
         $sheet->freezePane('A2');
     }
 
@@ -467,12 +445,15 @@ class ExportController extends Controller
         $sheet->setCellValue("I{$row}", "=H{$row}-D{$row}");
         $sheet->setCellValue("J{$row}", "=H{$row}/B{$row}");
         $sheet->setCellValue("K{$row}", "=I{$row}/B{$row}");
+        $sheet->setCellValue("L{$row}", "=F{$row}/B{$row}");
 
-        $sheet->getStyle("J{$row}:K{$row}")->getNumberFormat()->setFormatCode('0%');
+        $sheet->getStyle("J{$row}:L{$row}")
+            ->getNumberFormat()
+            ->setFormatCode('0%');
         $sheet->getStyle("B{$row}")->getNumberFormat()->setFormatCode('#,##0');
 
         if ($bold) {
-            $sheet->getStyle("A{$row}:K{$row}")->getFont()->setBold(true);
+            $sheet->getStyle("A{$row}:L{$row}")->getFont()->setBold(true);
         }
     }
 

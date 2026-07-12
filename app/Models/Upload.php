@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Upload extends Model
 {
     protected $fillable = [
-        'upload_date',
-        'original_filename',
-        'total_rows',
+    'upload_date',
+    'petugas_role',
+    'original_filename',
+    'file_path',
+    'total_rows',
     ];
 
     protected $casts = [

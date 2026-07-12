@@ -13,16 +13,32 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $availableDates = Upload::orderBy('upload_date')->pluck('upload_date')
-            ->map(fn ($d) => $d->format('Y-m-d'))
-            ->values();
+    
+// Riwayat upload
+$availableUploads = Upload::orderByDesc('upload_date')->get();
 
-        $latestDate = $availableDates->last();
-        $selectedDate = $request->input('tanggal', $latestDate);
+// hanya tanggal unik
+$availableDates = $availableUploads
+    ->pluck('upload_date')
+    ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+    ->unique()
+    ->sortDesc()
+    ->values();
 
-        if ($selectedDate && ! $availableDates->contains($selectedDate)) {
-            $selectedDate = $latestDate;
-        }
+// Upload terakhir berdasarkan waktu upload
+$latestUpload = Upload::latest('id')->first();
+
+// Tanggal yang dipilih user (jika ada)
+$selectedDate = $request->input('tanggal');
+
+// Jika belum memilih tanggal, gunakan upload terakhir
+if (!$selectedDate) {
+    $selectedDate = optional($latestUpload)->upload_date;
+}
+
+if (!$availableDates->contains($selectedDate)) {
+    $selectedDate = $availableDates->first();
+}
 
         $filters = [
             'petugas_username' => $request->input('petugas_username'),
@@ -51,6 +67,9 @@ class DashboardController extends Controller
         $petugasOptions = AssignmentSnapshot::query()
             ->select('petugas_username', 'petugas_email')
             ->whereNotNull('petugas_username')
+            ->when($filters['petugas_role'], function ($q, $role) {
+    $q->where('petugas_role', $role);
+})
             ->distinct()
             ->get()
             ->map(function ($p) use ($referenceMap) {
@@ -76,8 +95,25 @@ class DashboardController extends Controller
             ->pluck('sls_code');
 
         // ----- Data untuk tanggal yang dipilih -----
-        $baseQuery = AssignmentSnapshot::query()->when($selectedDate, fn ($q) => $q->where('upload_date', $selectedDate));
-        $this->applyFilters($baseQuery, $filters);
+$baseQuery = AssignmentSnapshot::query();
+
+if ($request->filled('tanggal')) {
+
+    // Jika user memilih tanggal
+    $baseQuery->whereDate('upload_date', $selectedDate);
+
+} else {
+
+    // Dashboard pertama kali dibuka → upload terakhir saja
+    $baseQuery->where('upload_id', $latestUpload->id);
+
+}
+
+if ($filters['petugas_role']) {
+    $baseQuery->where('petugas_role', $filters['petugas_role']);
+}
+
+$this->applyFilters($baseQuery, $filters);
 
         $summaryRow = (clone $baseQuery)->selectRaw('
                 COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
@@ -122,6 +158,10 @@ class DashboardController extends Controller
                     ? round(($row->status_submit_plus / $row->total_assignment) * 100)
                     : 0;
 
+                $row->pct_approved = $row->total_assignment > 0
+                    ? round(($row->status_approved_pengawas / $row->total_assignment) * 100)
+                    : 0;
+
                 $ref = $referenceMap->get($row->petugas_username);
                 $row->nama_petugas = $ref->nama_petugas ?? null;
                 $row->kode_kecamatan = $ref->kode_kecamatan ?? null;
@@ -160,6 +200,10 @@ class DashboardController extends Controller
                     ? round(($subtotal['status_submit_plus'] / $subtotal['total_assignment']) * 100)
                     : 0;
 
+                $subtotal['pct_approved'] = $subtotal['total_assignment'] > 0
+                    ? round(($subtotal['status_approved_pengawas'] / $subtotal['total_assignment']) * 100)
+                    : 0;
+
                 return [
                     'label' => '['.$kodeSingkat.'] '.mb_strtoupper($namaKecamatan),
                     'kode' => $first->kode_kecamatan ?? 'ZZZ',
@@ -170,50 +214,61 @@ class DashboardController extends Controller
             ->sortBy('kode')
             ->values();
 
-        // ----- Data tren historis (dibatasi 7 hari terakhir) -----
-        $availableDatesForTrend = $availableDates->slice(-7)->values();
+       // ----- Data tren historis (dibatasi 7 hari terakhir) -----
+$availableDatesForTrend = $availableDates
+    ->unique()
+    ->sort()
+    ->values()
+    ->slice(-7);
 
-        $trendQuery = AssignmentSnapshot::query()
-            ->selectRaw('
-                upload_date,
-                COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
-                COALESCE(SUM(status_open),0) as open,
-                COALESCE(SUM(status_draft),0) as draft,
-                COALESCE(SUM(status_submitted_pencacah),0) as submitted,
-                COALESCE(SUM(status_approved_pengawas),0) as approved,
-                COALESCE(SUM(status_rejected_pengawas),0) as rejected,
-                COALESCE(SUM(status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open,
-                COALESCE(SUM(status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open_draft
-            ')
-            ->groupBy('upload_date')
-            ->orderBy('upload_date');
+$trendQuery = AssignmentSnapshot::query()
+    ->when($filters['petugas_role'], function ($q, $role) {
+        $q->where('petugas_role', $role);
+    })
+    ->selectRaw('
+        upload_date,
+        COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
+        COALESCE(SUM(status_open),0) as open,
+        COALESCE(SUM(status_draft),0) as draft,
+        COALESCE(SUM(status_submitted_pencacah),0) as submitted,
+        COALESCE(SUM(status_approved_pengawas),0) as approved,
+        COALESCE(SUM(status_rejected_pengawas),0) as rejected,
+        COALESCE(SUM(status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open,
+        COALESCE(SUM(status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open_draft
+    ')
+    ->groupBy('upload_date')
+    ->orderBy('upload_date');
         $this->applyFilters($trendQuery, $filters);
         $trendRows = $trendQuery->get()->keyBy(fn ($r) => Carbon::parse($r->upload_date)->format('Y-m-d'));
 
         // ----- Perbandingan dengan upload sebelumnya -----
-        $previousDate = $availableDates->filter(fn ($d) => $selectedDate && $d < $selectedDate)->last();
+       $previousDate = $availableDates
+        ->filter(fn ($date) => $date < $selectedDate)
+        ->last();
 
-        // Kalau tanggal sebelumnya tidak ada di trendRows (di luar 7 hari),
-        // ambil langsung dari database supaya perbandingan tetap akurat.
-        if ($previousDate && ! $trendRows->has($previousDate)) {
-           $prevQueryDirect = AssignmentSnapshot::query()
-            ->where('upload_date', $previousDate)
-            ->selectRaw('
-            COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
-            COALESCE(SUM(status_open),0) as open,
-            COALESCE(SUM(status_draft),0) as draft,
-            COALESCE(SUM(status_submitted_pencacah),0) as submitted,
-            COALESCE(SUM(status_approved_pengawas),0) as approved,
-            COALESCE(SUM(status_rejected_pengawas),0) as rejected,
-            COALESCE(SUM(status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open,
-            COALESCE(SUM(status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open_draft
+if ($previousDate) {
+
+    $prevQueryDirect = AssignmentSnapshot::query()
+        ->whereDate('upload_date', $previousDate)
+        ->selectRaw('
+        COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
+        COALESCE(SUM(status_open),0) as open,
+        COALESCE(SUM(status_draft),0) as draft,
+        COALESCE(SUM(status_submitted_pencacah),0) as submitted,
+        COALESCE(SUM(status_approved_pengawas),0) as approved,
+        COALESCE(SUM(status_rejected_pengawas),0) as rejected,
+        COALESCE(SUM(status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open,
+        COALESCE(SUM(status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open_draft
     ');
-            $this->applyFilters($prevQueryDirect, $filters);
-            $prevRowDirect = $prevQueryDirect->first();
-            if ($prevRowDirect) {
-                $trendRows->put($previousDate, $prevRowDirect);
-            }
-        }
+
+$this->applyFilters($prevQueryDirect, $filters);
+
+    $prevRowDirect = $prevQueryDirect->first();
+
+    if ($prevRowDirect) {
+        $trendRows->put($previousDate, $prevRowDirect);
+    }
+}
 
         $trend = [
             'labels' => [],
@@ -225,16 +280,23 @@ class DashboardController extends Controller
             'rejected' => [],
             'non_open' => [],
             'non_open_draft' => [],
+            'pct_approved' => [],
         ];
 
-        foreach ($availableDatesForTrend as $date) {
-            $row = $trendRows->get($date);
-            $trend['labels'][] = Carbon::parse($date)->translatedFormat('d M');
+foreach ($availableDatesForTrend as $date) {
+
+    $row = $trendRows->get(Carbon::parse($date)->format('Y-m-d'));
+
+    $trend['labels'][] = Carbon::parse($date)->translatedFormat('d M');
             $trend['total'][] = $row ? (int) $row->total : 0;
             $trend['open'][] = $row ? (int) $row->open : 0;
             $trend['draft'][] = $row ? (int) $row->draft : 0;
             $trend['submitted'][] = $row ? (int) $row->submitted : 0;
             $trend['approved'][] = $row ? (int) $row->approved : 0;
+            $trend['pct_approved'][] =
+            ($row && $row->total > 0)
+                ? round(($row->approved / $row->total) * 100)
+                : 0;
             $trend['rejected'][] = $row ? (int) $row->rejected : 0;
             $trend['non_open'][] = $row ? (int) $row->non_open : 0;
             $trend['non_open_draft'][] = $row ? (int) $row->non_open_draft : 0;
@@ -268,11 +330,20 @@ class DashboardController extends Controller
             ])->values())
             ->toArray();
 
-        // Mapping kecamatan -> daftar SLS code
+       // Mapping kecamatan -> daftar SLS code
         $kecamatanSlsMap = \App\Models\AssignmentSnapshot::query()
             ->whereNotNull('sls_code')
-            ->whereNotNull('petugas_username')
-            ->when($selectedDate, fn ($q) => $q->where('upload_date', $selectedDate))
+            ->whereNotNull('petugas_username');
+
+        if ($request->filled('tanggal')) {
+            // Jika user memilih tanggal
+            $kecamatanSlsMap->whereDate('upload_date', $selectedDate);
+        } else {
+            // Dashboard pertama kali dibuka → upload terakhir saja
+            $kecamatanSlsMap->where('upload_id', $latestUpload->id);
+        }
+
+        $kecamatanSlsMap = $kecamatanSlsMap
             ->select('petugas_username', 'sls_code')
             ->distinct()
             ->get()
@@ -333,7 +404,7 @@ class DashboardController extends Controller
             'pct_draft' => $total > 0 ? round($draft / $total * 100, 1) : 0,
             'pct_submitted' => $total > 0 ? round($submitPlus / $total * 100) : 0,
             'pct_submitted_pencacah' => $total > 0 ? round($submitted / $total * 100, 1) : 0,
-            'pct_approved' => $total > 0 ? round($approved / $total * 100, 1) : 0,
+            'pct_approved' => $total > 0 ? round($approved / $total * 100) : 0,
             'pct_rejected' => $total > 0 ? round($rejected / $total * 100, 1) : 0,
             'pct_non_open' => $total > 0 ? round($nonOpen / $total * 100) : 0,
         ];

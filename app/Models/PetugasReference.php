@@ -11,5 +11,6 @@ class PetugasReference extends Model
         'nama_petugas',
         'kode_kecamatan',
         'nama_kecamatan',
+        'petugas_role',
     ];
 }
