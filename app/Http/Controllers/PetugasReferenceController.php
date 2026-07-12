@@ -58,10 +58,6 @@ class PetugasReferenceController extends Controller
 
        DB::transaction(function () use ($rows, $map, &$count, $role, $file, $path) {
 
-    if ($role) {
-        PetugasReference::where('petugas_role', $role)->delete();
-    }
-
     $now = now();
     $batch = [];
 
@@ -86,8 +82,18 @@ class PetugasReferenceController extends Controller
     }
 
             foreach (array_chunk($batch, 500) as $chunk) {
-                PetugasReference::insert($chunk);
-            }
+                PetugasReference::upsert(
+                $chunk,
+                ['petugas_username'],
+                [
+                    'nama_petugas',
+                    'kode_kecamatan',
+                    'nama_kecamatan',
+                    'petugas_role',
+                    'updated_at',
+                ]
+            );
+        }
             ReferenceUpload::create([
                 'petugas_role'      => $role,
                 'original_filename' => $file->getClientOriginalName(),
