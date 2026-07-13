@@ -116,28 +116,44 @@ if ($filters['petugas_role']) {
 $this->applyFilters($baseQuery, $filters);
 
         $summaryRow = (clone $baseQuery)->selectRaw('
-                COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
-                COALESCE(SUM(status_open),0) as open,
-                COALESCE(SUM(status_draft),0) as draft,
-                COALESCE(SUM(status_submitted_pencacah),0) as submitted,
-                COALESCE(SUM(status_approved_pengawas),0) as approved,
-                COALESCE(SUM(status_rejected_pengawas),0) as rejected
-            ')->first();
+        COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
+        COALESCE(SUM(status_open),0) as open,
+        COALESCE(SUM(status_draft),0) as draft,
+        COALESCE(SUM(status_submitted_pencacah),0) as submitted,
+        COALESCE(SUM(status_approved_pengawas),0) as approved,
+        COALESCE(SUM(status_rejected_pengawas),0) as rejected,
+
+        COALESCE(SUM(status_edited_pengawas),0) as edited_pengawas,
+        COALESCE(SUM(status_revoked_pengawas),0) as revoked_pengawas,
+        COALESCE(SUM(status_submitted_respondent),0) as submitted_respondent,
+        COALESCE(SUM(status_completed_admin_kab),0) as completed_admin,
+        COALESCE(SUM(status_edited_admin_kab),0) as edited_admin,
+        COALESCE(SUM(status_rejected_admin_kab),0) as rejected_admin,
+        COALESCE(SUM(status_revoked_admin_kab),0) as revoked_admin
+    ')->first();
 
         $summary = $this->aggregateFromRow($summaryRow);
 
         // ----- Tabel ringkasan per petugas -----
         $perPetugas = (clone $baseQuery)
-            ->selectRaw('
-                petugas_username,
-                MAX(petugas_email) as petugas_email,
-                SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas) as total_assignment,
-                SUM(status_open) as status_open,
-                SUM(status_draft) as status_draft,
-                SUM(status_submitted_pencacah) as status_submitted_pencacah,
-                SUM(status_approved_pengawas) as status_approved_pengawas,
-                SUM(status_rejected_pengawas) as status_rejected_pengawas
-            ')
+        ->selectRaw('
+            petugas_username,
+            MAX(petugas_email) as petugas_email,
+            SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas) as total_assignment,
+            SUM(status_open) as status_open,
+            SUM(status_draft) as status_draft,
+            SUM(status_submitted_pencacah) as status_submitted_pencacah,
+            SUM(status_approved_pengawas) as status_approved_pengawas,
+            SUM(status_rejected_pengawas) as status_rejected_pengawas,
+
+            SUM(status_edited_pengawas) as status_edited_pengawas,
+            SUM(status_revoked_pengawas) as status_revoked_pengawas,
+            SUM(status_submitted_respondent) as status_submitted_respondent,
+            SUM(status_completed_admin_kab) as status_completed_admin_kab,
+            SUM(status_edited_admin_kab) as status_edited_admin_kab,
+            SUM(status_rejected_admin_kab) as status_rejected_admin_kab,
+            SUM(status_revoked_admin_kab) as status_revoked_admin_kab
+        ')
             ->groupBy('petugas_username')
             ->orderByDesc('total_assignment')
             ->get()
@@ -158,10 +174,16 @@ $this->applyFilters($baseQuery, $filters);
                     ? round(($row->status_submit_plus / $row->total_assignment) * 100)
                     : 0;
 
-                $row->pct_approved = $row->total_assignment > 0
-                    ? round(($row->status_approved_pengawas / $row->total_assignment) * 100)
-                    : 0;
-
+               $approvedBaru =
+                    $row->status_approved_pengawas +
+                    $row->status_edited_pengawas +
+                    $row->status_submitted_respondent +
+                    $row->status_completed_admin_kab +
+                    $row->status_edited_admin_kab +
+                    $row->status_rejected_admin_kab +
+                    $row->status_revoked_admin_kab;
+                    $row->pct_approved = $row->total_assignment > 0 ? round(($approvedBaru / $row->total_assignment) * 100) : 0;
+                    
                 $ref = $referenceMap->get($row->petugas_username);
                 $row->nama_petugas = $ref->nama_petugas ?? null;
                 $row->kode_kecamatan = $ref->kode_kecamatan ?? null;
@@ -187,6 +209,15 @@ $this->applyFilters($baseQuery, $filters);
                     'status_submitted_pencacah' => $sorted->sum('status_submitted_pencacah'),
                     'status_approved_pengawas' => $sorted->sum('status_approved_pengawas'),
                     'status_rejected_pengawas' => $sorted->sum('status_rejected_pengawas'),
+
+                    'status_edited_pengawas' => $sorted->sum('status_edited_pengawas'),
+                    'status_revoked_pengawas' => $sorted->sum('status_revoked_pengawas'),
+                    'status_submitted_respondent' => $sorted->sum('status_submitted_respondent'),
+                    'status_completed_admin_kab' => $sorted->sum('status_completed_admin_kab'),
+                    'status_edited_admin_kab' => $sorted->sum('status_edited_admin_kab'),
+                    'status_rejected_admin_kab' => $sorted->sum('status_rejected_admin_kab'),
+                    'status_revoked_admin_kab' => $sorted->sum('status_revoked_admin_kab'),
+
                     'status_non_open' => $sorted->sum('status_non_open'),
                     'status_submit_plus' => $sorted->sum('status_submit_plus'),
                 ];
@@ -200,10 +231,17 @@ $this->applyFilters($baseQuery, $filters);
                     ? round(($subtotal['status_submit_plus'] / $subtotal['total_assignment']) * 100)
                     : 0;
 
-                $subtotal['pct_approved'] = $subtotal['total_assignment'] > 0
-                    ? round(($subtotal['status_approved_pengawas'] / $subtotal['total_assignment']) * 100)
-                    : 0;
+                $approvedBaru =
+                $subtotal['status_approved_pengawas'] +
+                $subtotal['status_edited_pengawas'] +
+                $subtotal['status_submitted_respondent'] +
+                $subtotal['status_completed_admin_kab'] +
+                $subtotal['status_edited_admin_kab'] +
+                $subtotal['status_rejected_admin_kab'] +
+                $subtotal['status_revoked_admin_kab'];
 
+                $subtotal['pct_approved'] =
+                $subtotal['total_assignment'] > 0 ? round(($approvedBaru / $subtotal['total_assignment']) * 100) : 0;
                 return [
                     'label' => '['.$kodeSingkat.'] '.mb_strtoupper($namaKecamatan),
                     'kode' => $first->kode_kecamatan ?? 'ZZZ',
@@ -233,6 +271,15 @@ $trendQuery = AssignmentSnapshot::query()
         COALESCE(SUM(status_submitted_pencacah),0) as submitted,
         COALESCE(SUM(status_approved_pengawas),0) as approved,
         COALESCE(SUM(status_rejected_pengawas),0) as rejected,
+
+        COALESCE(SUM(status_edited_pengawas),0) as edited_pengawas,
+        COALESCE(SUM(status_revoked_pengawas),0) as revoked_pengawas,
+        COALESCE(SUM(status_submitted_respondent),0) as submitted_respondent,
+        COALESCE(SUM(status_completed_admin_kab),0) as completed_admin,
+        COALESCE(SUM(status_edited_admin_kab),0) as edited_admin,
+        COALESCE(SUM(status_rejected_admin_kab),0) as rejected_admin,
+        COALESCE(SUM(status_revoked_admin_kab),0) as revoked_admin,
+
         COALESCE(SUM(status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open,
         COALESCE(SUM(status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as non_open_draft
     ')
@@ -288,19 +335,38 @@ foreach ($availableDatesForTrend as $date) {
     $row = $trendRows->get(Carbon::parse($date)->format('Y-m-d'));
 
     $trend['labels'][] = Carbon::parse($date)->translatedFormat('d M');
-            $trend['total'][] = $row ? (int) $row->total : 0;
-            $trend['open'][] = $row ? (int) $row->open : 0;
-            $trend['draft'][] = $row ? (int) $row->draft : 0;
-            $trend['submitted'][] = $row ? (int) $row->submitted : 0;
-            $trend['approved'][] = $row ? (int) $row->approved : 0;
-            $trend['pct_approved'][] =
-            ($row && $row->total > 0)
-                ? round(($row->approved / $row->total) * 100)
-                : 0;
-            $trend['rejected'][] = $row ? (int) $row->rejected : 0;
-            $trend['non_open'][] = $row ? (int) $row->non_open : 0;
-            $trend['non_open_draft'][] = $row ? (int) $row->non_open_draft : 0;
-        }
+    $trend['total'][] = $row ? (int)$row->total : 0;
+    $trend['open'][] = $row ? (int)$row->open : 0;
+    $trend['draft'][] = $row ? (int)$row->draft : 0;
+    $trend['submitted'][] = $row ? (int)$row->submitted : 0;
+    $trend['approved'][] = $row ? (int)$row->approved : 0;
+
+    if ($row && $row->total > 0) {
+
+    $approvedBaru =
+        $row->approved +
+        ($row->edited_pengawas ?? 0) +
+        ($row->submitted_respondent ?? 0) +
+        ($row->completed_admin ?? 0) +
+        ($row->edited_admin ?? 0) +
+        ($row->rejected_admin ?? 0) +
+        ($row->revoked_admin ?? 0);
+
+    $trend['pct_approved'][] = round(
+        ($approvedBaru / $row->total) * 100,
+        1
+    );
+
+} else {
+
+    $trend['pct_approved'][] = 0;
+
+}
+
+    $trend['rejected'][] = $row ? (int)$row->rejected : 0;
+    $trend['non_open'][] = $row ? (int)$row->non_open : 0;
+    $trend['non_open_draft'][] = $row ? (int)$row->non_open_draft : 0;
+}
 
         $comparison = null;
 
@@ -388,8 +454,23 @@ foreach ($availableDatesForTrend as $date) {
         $submitted = (int) ($row->submitted ?? 0);
         $approved = (int) ($row->approved ?? 0);
         $rejected = (int) ($row->rejected ?? 0);
+        $editedPengawas = (int) ($row->edited_pengawas ?? 0);
+        $revokedPengawas = (int) ($row->revoked_pengawas ?? 0);
+        $submittedRespondent = (int) ($row->submitted_respondent ?? 0);
+        $completedAdmin = (int) ($row->completed_admin ?? 0);
+        $editedAdmin = (int) ($row->edited_admin ?? 0);
+        $rejectedAdmin = (int) ($row->rejected_admin ?? 0);
+        $revokedAdmin = (int) ($row->revoked_admin ?? 0);
         $nonOpen = $total - $open;
         $submitPlus = $submitted + $approved + $rejected;
+        $approvedBaru =
+            $approved +
+            $editedPengawas +
+            $submittedRespondent +
+            $completedAdmin +
+            $editedAdmin +
+            $rejectedAdmin +
+            $revokedAdmin;
 
         return [
             'total' => $total,
@@ -404,7 +485,7 @@ foreach ($availableDatesForTrend as $date) {
             'pct_draft' => $total > 0 ? round($draft / $total * 100, 1) : 0,
             'pct_submitted' => $total > 0 ? round($submitPlus / $total * 100) : 0,
             'pct_submitted_pencacah' => $total > 0 ? round($submitted / $total * 100, 1) : 0,
-            'pct_approved' => $total > 0 ? round($approved / $total * 100) : 0,
+            'pct_approved' => $total > 0 ? round(($approvedBaru / $total) * 100) : 0,
             'pct_rejected' => $total > 0 ? round($rejected / $total * 100, 1) : 0,
             'pct_non_open' => $total > 0 ? round($nonOpen / $total * 100) : 0,
         ];

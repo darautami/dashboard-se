@@ -119,6 +119,7 @@ foreach ($rows as $row) {
                 'status_completed_admin_kab' => $this->intVal($row, $map, 'assignment_status_completed_by_admin_kabupaten'),
                 'status_edited_admin_kab' => $this->intVal($row, $map, 'assignment_status_edited_by_admin_kabupaten'),
                 'status_rejected_admin_kab' => $this->intVal($row, $map, 'assignment_status_rejected_by_admin_kabupaten'),
+                'status_revoked_admin_kab' => $this->intVal($row, $map, 'assignment_status_revoked_by_admin_kabupaten'),
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -169,7 +170,10 @@ foreach ($rows as $row) {
             'assignment_status_revoked_by_pengawas',
             'assignment_status_submitted_respondent',
             'assignment_status_completed_by_admin_kabupaten',
-        ];
+            'assignment_status_edited_by_admin_kabupaten',
+            'assignment_status_rejected_by_admin_kabupaten',
+            'assignment_status_revoked_by_admin_kabupaten',
+            ];
 
         $map = [];
         foreach ($targets as $target) {

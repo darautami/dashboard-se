@@ -28,6 +28,9 @@ class AssignmentSnapshot extends Model
         'status_revoked_pengawas',
         'status_submitted_respondent',
         'status_completed_admin_kab',
+        'status_edited_admin_kab',
+        'status_rejected_admin_kab',
+        'status_revoked_admin_kab',
     ];
 
     protected $casts = [
@@ -43,6 +46,9 @@ class AssignmentSnapshot extends Model
         'status_revoked_pengawas' => 'integer',
         'status_submitted_respondent' => 'integer',
         'status_completed_admin_kab' => 'integer',
+        'status_edited_admin_kab' => 'integer',
+        'status_rejected_admin_kab' => 'integer',
+        'status_revoked_admin_kab' => 'integer',
     ];
 
     public function upload(): BelongsTo

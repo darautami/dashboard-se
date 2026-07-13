@@ -34,12 +34,10 @@ class ExportController extends Controller
         $selectedDate = $request->input('tanggal');
 
         $query = AssignmentSnapshot::query()
-            ->selectRaw('
-                upload_date,
+                ->selectRaw('
                 petugas_username,
-                MAX(petugas_email) as petugas_email,
-                MAX(petugas_role) as petugas_role,
-                SUM(sls_total_assignment) as total_assignment,
+                MAX(kabupaten_code) as kabupaten_code,
+                MAX(kabupaten_name) as kabupaten_name,
                 SUM(status_open) as status_open,
                 SUM(status_draft) as status_draft,
                 SUM(status_submitted_pencacah) as status_submitted_pencacah,
@@ -50,7 +48,8 @@ class ExportController extends Controller
                 SUM(status_submitted_respondent) as status_submitted_respondent,
                 SUM(status_completed_admin_kab) as status_completed_admin_kab,
                 SUM(status_edited_admin_kab) as status_edited_admin_kab,
-                SUM(status_rejected_admin_kab) as status_rejected_admin_kab
+                SUM(status_rejected_admin_kab) as status_rejected_admin_kab,
+                SUM(status_revoked_admin_kab) as status_revoked_admin_kab
             ')
             ->groupBy('upload_date', 'petugas_username')
             // Diurutkan per PETUGAS dulu, baru per tanggal -> histori 1 petugas
@@ -311,11 +310,19 @@ return $this->exportXlsx(
                 petugas_username,
                 MAX(kabupaten_code) as kabupaten_code,
                 MAX(kabupaten_name) as kabupaten_name,
+
                 SUM(status_open) as status_open,
                 SUM(status_draft) as status_draft,
                 SUM(status_submitted_pencacah) as status_submitted_pencacah,
                 SUM(status_approved_pengawas) as status_approved_pengawas,
-                SUM(status_rejected_pengawas) as status_rejected_pengawas
+                SUM(status_rejected_pengawas) as status_rejected_pengawas,
+
+                SUM(status_edited_pengawas) as status_edited_pengawas,
+                SUM(status_revoked_pengawas) as status_revoked_pengawas,
+                SUM(status_submitted_respondent) as status_submitted_respondent,
+                SUM(status_completed_admin_kab) as status_completed_admin_kab,
+                SUM(status_edited_admin_kab) as status_edited_admin_kab,
+                SUM(status_rejected_admin_kab) as status_rejected_admin_kab
             ')
             ->groupBy('petugas_username')
             ->when($filters['petugas_username'] ?? null, fn ($q, $v) => $q->where('petugas_username', $v))
@@ -355,8 +362,20 @@ return $this->exportXlsx(
         $sheet->getStyle('A1:L1')->getFont()->setBold(true);
 
         $rowIndex = 2;
-        $grand = ['open' => 0, 'draft' => 0, 'submit' => 0, 'approve' => 0, 'reject' => 0]
-        ;
+        $grand = [
+            'open' => 0,
+            'draft' => 0,
+            'submit' => 0,
+            'approve' => 0,
+            'reject' => 0,
+            'edited_pengawas' => 0,
+            'revoked_pengawas' => 0,
+            'submitted_respondent' => 0,
+            'completed_admin' => 0,
+            'edited_admin' => 0,
+            'rejected_admin' => 0,
+            'revoked_admin' => 0,
+        ];
 
         // Kelompokkan ulang per kode_kecamatan supaya bisa diakses nama & sort yang benar
         $petugasByKecamatan = $petugasRows->groupBy(function ($row) use ($referenceMap) {
@@ -391,8 +410,32 @@ return $this->exportXlsx(
             $kecSubmit = (int) $petugasSorted->sum('status_submitted_pencacah');
             $kecApprove = (int) $petugasSorted->sum('status_approved_pengawas');
             $kecReject = (int) $petugasSorted->sum('status_rejected_pengawas');
+            $kecEditedPengawas = (int) $petugasSorted->sum('status_edited_pengawas');
+            $kecRevokedPengawas = (int) $petugasSorted->sum('status_revoked_pengawas');
+            $kecSubmittedRespondent = (int) $petugasSorted->sum('status_submitted_respondent');
+            $kecCompletedAdmin = (int) $petugasSorted->sum('status_completed_admin_kab');
+            $kecEditedAdmin = (int) $petugasSorted->sum('status_edited_admin_kab');
+            $kecRejectedAdmin = (int) $petugasSorted->sum('status_rejected_admin_kab');
+            $kecRevokedAdmin = (int) $petugasSorted->sum('status_revoked_admin_kab');
 
-            $this->writeKecamatanRecapRow($sheet, $rowIndex, $labelKecamatan, $kecOpen, $kecDraft, $kecSubmit, $kecApprove, $kecReject, true);
+            $this->writeKecamatanRecapRow(
+                $sheet,
+                $rowIndex,
+                $labelKecamatan,
+                $kecOpen,
+                $kecDraft,
+                $kecSubmit,
+                $kecApprove,
+                $kecReject,
+                $kecEditedPengawas,
+                $kecRevokedPengawas,
+                $kecSubmittedRespondent,
+                $kecCompletedAdmin,
+                $kecEditedAdmin,
+                $kecRejectedAdmin,
+                $kecRevokedAdmin,
+                true
+            );
             $rowIndex++;
 
             foreach ($petugasSorted as $p) {
@@ -400,10 +443,23 @@ return $this->exportXlsx(
                 $namaPetugas = $ref->nama_petugas ?? $p->petugas_username;
 
                 $this->writeKecamatanRecapRow(
-                    $sheet, $rowIndex, $namaPetugas,
-                    (int) $p->status_open, (int) $p->status_draft, (int) $p->status_submitted_pencacah,
-                    (int) $p->status_approved_pengawas, (int) $p->status_rejected_pengawas, false
-                );
+                    $sheet,
+                    $rowIndex,
+                    $namaPetugas,
+                    (int) $p->status_open,
+                    (int) $p->status_draft,
+                    (int) $p->status_submitted_pencacah,
+                    (int) $p->status_approved_pengawas,
+                    (int) $p->status_rejected_pengawas,
+                    (int) $p->status_edited_pengawas,
+                    (int) $p->status_revoked_pengawas,
+                    (int) $p->status_submitted_respondent,
+                    (int) $p->status_completed_admin_kab,
+                    (int) $p->status_edited_admin_kab,
+                    (int) $p->status_rejected_admin_kab,
+                    (int) $p->status_revoked_admin_kab,
+                    false
+                    );
                 $rowIndex++;
             }
 
@@ -412,15 +468,35 @@ return $this->exportXlsx(
             $grand['submit'] += $kecSubmit;
             $grand['approve'] += $kecApprove;
             $grand['reject'] += $kecReject;
+            $grand['edited_pengawas'] += $kecEditedPengawas;
+            $grand['revoked_pengawas'] += $kecRevokedPengawas;
+            $grand['submitted_respondent'] += $kecSubmittedRespondent;
+            $grand['completed_admin'] += $kecCompletedAdmin;
+            $grand['edited_admin'] += $kecEditedAdmin;
+            $grand['rejected_admin'] += $kecRejectedAdmin;
+            $grand['revoked_admin'] += $kecRevokedAdmin;
         }
 
         // Baris grand total (kabupaten/kota)
         $labelGrand = '['.($kabupatenCode ?? '-').'] '.mb_strtoupper($kabupatenName ?? 'TOTAL');
         $this->writeKecamatanRecapRow(
-            $sheet, $rowIndex, $labelGrand,
-            $grand['open'], $grand['draft'], $grand['submit'], $grand['approve'], $grand['reject'], true
+            $sheet,
+            $rowIndex,
+            $labelGrand,
+            $grand['open'],
+            $grand['draft'],
+            $grand['submit'],
+            $grand['approve'],
+            $grand['reject'],
+            $grand['edited_pengawas'],
+            $grand['revoked_pengawas'],
+            $grand['submitted_respondent'],
+            $grand['completed_admin'],
+            $grand['edited_admin'],
+            $grand['rejected_admin'],
+            $grand['revoked_admin'],
+            true
         );
-
         $lastDataRow = $rowIndex;
 
         foreach (range('A', 'L') as $col) {
@@ -430,10 +506,24 @@ return $this->exportXlsx(
         $sheet->setAutoFilter('A1:L'.$lastDataRow);
         $sheet->freezePane('A2');
     }
-
-    private function writeKecamatanRecapRow(
-        $sheet, int $row, string $label, int $open, int $draft, int $submit, int $approve, int $reject, bool $bold
-    ): void {
+        private function writeKecamatanRecapRow(
+            $sheet,
+            int $row,
+            string $label,
+            int $open,
+            int $draft,
+            int $submit,
+            int $approve,
+            int $reject,
+            int $editedPengawas,
+            int $revokedPengawas,
+            int $submittedRespondent,
+            int $completedAdmin,
+            int $editedAdmin,
+            int $rejectedAdmin,
+            int $revokedAdmin,
+            bool $bold
+        ): void {
         $sheet->setCellValue("A{$row}", $label);
         $sheet->setCellValue("B{$row}", "=SUM(C{$row}:G{$row})");
         $sheet->setCellValue("C{$row}", $open);
@@ -445,7 +535,31 @@ return $this->exportXlsx(
         $sheet->setCellValue("I{$row}", "=H{$row}-D{$row}");
         $sheet->setCellValue("J{$row}", "=H{$row}/B{$row}");
         $sheet->setCellValue("K{$row}", "=I{$row}/B{$row}");
-        $sheet->setCellValue("L{$row}", "=F{$row}/B{$row}");
+$assignment =
+    $open +
+    $draft +
+    $submit +
+    $approve +
+    $reject;
+
+$approvedBaru =
+    $approve +
+    $reject +
+    $editedAdmin +
+    $editedPengawas +
+    $completedAdmin +
+    $rejectedAdmin +
+    $revokedPengawas +
+    $submittedRespondent +
+    $revokedAdmin;
+
+$pctApproved = $assignment > 0
+    ? ($approvedBaru - $reject - $revokedPengawas) / $assignment
+    : 0;
+
+$sheet->setCellValue("L{$row}", $pctApproved);
+
+    $sheet->setCellValue("L{$row}", $pctApproved);
 
         $sheet->getStyle("J{$row}:L{$row}")
             ->getNumberFormat()
