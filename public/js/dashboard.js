@@ -24,58 +24,92 @@ document.addEventListener('DOMContentLoaded', function () {
                 labels: trend.labels,
                 datasets: [
                     {
+                        
                         label: 'Total Assignment',
                         data: trend.total,
                         borderColor: COLORS.total,
                         backgroundColor: COLORS.total,
+                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                     },
+                    
                     {
                         label: 'Open',
                         data: trend.open,
                         borderColor: COLORS.open,
                         backgroundColor: COLORS.open,
+                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                     },
                     {
                         label: 'Draft',
                         data: trend.draft,
                         borderColor: COLORS.draft,
                         backgroundColor: COLORS.draft,
+                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                     },
                     {
                         label: 'Submitted by Pencacah',
                         data: trend.submitted,
                         borderColor: COLORS.submitted,
                         backgroundColor: COLORS.submitted,
+                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                     },
                     {
                         label: 'Approved by Pengawas',
                         data: trend.approved,
                         borderColor: COLORS.approved,
                         backgroundColor: COLORS.approved,
+                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                     },
                     {
                         label: 'Rejected by Pengawas',
                         data: trend.rejected,
                         borderColor: COLORS.rejected,
                         backgroundColor: COLORS.rejected,
+                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                     },
                 ],
             },
-            options: {
-                responsive: true,
-                interaction: { mode: 'index', intersect: false },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+
+                            layout: {
+                    padding: {
+                        top: 10,
+                        right: 10,
+                        bottom: 10,
+                        left: 10
+                    }
+                },
+
+                    interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+
+                hover: {
+                    mode: 'index',
+                    intersect: false
+                },
                 plugins: {
                     legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
                 },
@@ -97,10 +131,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     backgroundColor: [COLORS.open, COLORS.draft, COLORS.submitted, COLORS.approved, COLORS.rejected],
                     borderWidth: 0,
                 }],
-            },
-            options: {
-                responsive: true,
-                cutout: '62%',
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    cutout: '62%',
+
+                    layout: {
+            padding: {
+                top: 10,
+                right: 10,
+                bottom: 10,
+                left: 10
+            }
+    },
+
                 plugins: {
                     legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
                 },

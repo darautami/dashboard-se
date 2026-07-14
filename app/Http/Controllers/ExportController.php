@@ -34,10 +34,20 @@ class ExportController extends Controller
         $selectedDate = $request->input('tanggal');
 
         $query = AssignmentSnapshot::query()
-                ->selectRaw('
+               ->selectRaw('
+                upload_date,
                 petugas_username,
                 MAX(kabupaten_code) as kabupaten_code,
                 MAX(kabupaten_name) as kabupaten_name,
+
+                SUM(
+                    status_open +
+                    status_draft +
+                    status_submitted_pencacah +
+                    status_approved_pengawas +
+                    status_rejected_pengawas
+                ) as total_assignment,
+
                 SUM(status_open) as status_open,
                 SUM(status_draft) as status_draft,
                 SUM(status_submitted_pencacah) as status_submitted_pencacah,
@@ -85,40 +95,45 @@ class ExportController extends Controller
             $approved = (int) $row->status_approved_pengawas;
             $rejected = (int) $row->status_rejected_pengawas;
 
-            // Status "lain-lain" di luar 5 status utama, tetap dihitung untuk sanity-check
-            // % Gabungan Semua Status, supaya idealnya selalu menunjukkan 100%.
-            $statusLain = (int) $row->status_edited_pengawas
-                + (int) $row->status_revoked_pengawas
-                + (int) $row->status_submitted_respondent
-                + (int) $row->status_completed_admin_kab
-                + (int) $row->status_edited_admin_kab
-                + (int) $row->status_rejected_admin_kab;
+            $progress = $total > 0
+                ? round(($approved / $total) * 100, 1)
+                : 0;
 
-            $progress = $total > 0 ? round(($approved / $total) * 100, 1) : 0;
+            $nonOpen = $total - $open;
 
-            // % gabungan SEMUA status (5 status utama + status lain-lain) -> idealnya 100%, alat sanity-check data
-            $pctSemua = $total > 0 ? round((($open + $draft + $submitted + $approved + $rejected + $statusLain) / $total) * 100, 1) : 0;
-            // % selain Open & Draft -> sudah minimal disubmit (Submitted+Approved+Rejected)
-            $pctSelainOpenDraft = $total > 0 ? round((($submitted + $approved + $rejected) / $total) * 100, 1) : 0;
-            // % selain Open -> sudah mulai dikerjakan (Draft+Submitted+Approved+Rejected)
-            $pctSelainOpen = $total > 0 ? round((($draft + $submitted + $approved + $rejected) / $total) * 100, 1) : 0;
+            $pctNonOpen = $total > 0
+                ? round(($nonOpen / $total) * 100)
+                : 0;
+
+            $nonOpenDraft = $total - $open - $draft;
+
+            $pctSubmitPlus = $total > 0 ? round(($nonOpenDraft / $total) * 100) : 0;
+
+            $approvedProgress = $total - $open - $draft - $submitted;
+
+            $pctApproved = $total > 0
+                ? round(($approvedProgress / $total) * 100)
+                : 0;
 
             return [
-                'tanggal_raw' => Carbon::parse($row->upload_date)->format('Y-m-d'), // untuk sorting/pivot
-                'tanggal' => Carbon::parse($row->upload_date)->format('d-m-Y'),     // untuk ditampilkan
+                'tanggal_raw' => Carbon::parse($row->upload_date)->format('Y-m-d'),
+                'tanggal' => Carbon::parse($row->upload_date)->format('d-m-Y'),
                 'username' => $row->petugas_username,
                 'nama' => $ref->nama_petugas ?? '-',
                 'kecamatan' => $ref->nama_kecamatan ?? '-',
+
                 'total_assignment' => $total,
                 'open' => $open,
                 'draft' => $draft,
                 'submitted' => $submitted,
                 'approved' => $approved,
                 'rejected' => $rejected,
+
                 'progress' => $progress,
-                'pct_semua' => $pctSemua,
-                'pct_selain_open_draft' => $pctSelainOpenDraft,
-                'pct_selain_open' => $pctSelainOpen,
+
+                'pct_non_open' => $pctNonOpen,
+                'pct_submit_plus' => $pctSubmitPlus,
+                'pct_approved' => $pctApproved,
             ];
         });
 
@@ -322,7 +337,8 @@ return $this->exportXlsx(
                 SUM(status_submitted_respondent) as status_submitted_respondent,
                 SUM(status_completed_admin_kab) as status_completed_admin_kab,
                 SUM(status_edited_admin_kab) as status_edited_admin_kab,
-                SUM(status_rejected_admin_kab) as status_rejected_admin_kab
+                SUM(status_rejected_admin_kab) as status_rejected_admin_kab,
+                SUM(status_revoked_admin_kab) as status_revoked_admin_kab
             ')
             ->groupBy('petugas_username')
             ->when($filters['petugas_username'] ?? null, fn ($q, $v) => $q->where('petugas_username', $v))
@@ -418,7 +434,7 @@ return $this->exportXlsx(
             $kecRejectedAdmin = (int) $petugasSorted->sum('status_rejected_admin_kab');
             $kecRevokedAdmin = (int) $petugasSorted->sum('status_revoked_admin_kab');
 
-            $this->writeKecamatanRecapRow(
+           $this->writeKecamatanRecapRow(
                 $sheet,
                 $rowIndex,
                 $labelKecamatan,
@@ -531,35 +547,11 @@ return $this->exportXlsx(
         $sheet->setCellValue("E{$row}", $submit);
         $sheet->setCellValue("F{$row}", $approve);
         $sheet->setCellValue("G{$row}", $reject);
-        $sheet->setCellValue("H{$row}", "=SUM(D{$row}:G{$row})");
-        $sheet->setCellValue("I{$row}", "=H{$row}-D{$row}");
+        $sheet->setCellValue("H{$row}", "=B{$row}-C{$row}");
+        $sheet->setCellValue("I{$row}", "=B{$row}-C{$row}-D{$row}");
         $sheet->setCellValue("J{$row}", "=H{$row}/B{$row}");
         $sheet->setCellValue("K{$row}", "=I{$row}/B{$row}");
-$assignment =
-    $open +
-    $draft +
-    $submit +
-    $approve +
-    $reject;
-
-$approvedBaru =
-    $approve +
-    $reject +
-    $editedAdmin +
-    $editedPengawas +
-    $completedAdmin +
-    $rejectedAdmin +
-    $revokedPengawas +
-    $submittedRespondent +
-    $revokedAdmin;
-
-$pctApproved = $assignment > 0
-    ? ($approvedBaru - $reject - $revokedPengawas) / $assignment
-    : 0;
-
-$sheet->setCellValue("L{$row}", $pctApproved);
-
-    $sheet->setCellValue("L{$row}", $pctApproved);
+        $sheet->setCellValue("L{$row}", "=(B{$row}-C{$row}-D{$row}-E{$row})/B{$row}");
 
         $sheet->getStyle("J{$row}:L{$row}")
             ->getNumberFormat()

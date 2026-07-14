@@ -158,39 +158,46 @@ $this->applyFilters($baseQuery, $filters);
             ->orderByDesc('total_assignment')
             ->get()
             ->map(function ($row) use ($referenceMap) {
-                $row->progress = $row->total_assignment > 0
-                    ? round(($row->status_approved_pengawas / $row->total_assignment) * 100, 1)
-                    : 0;
+    $row->progress = $row->total_assignment > 0
+        ? round(($row->status_approved_pengawas / $row->total_assignment) * 100, 1)
+        : 0;
 
-                $row->status_non_open = $row->total_assignment - $row->status_open;
-                $row->pct_non_open = $row->total_assignment > 0
-                    ? round(($row->status_non_open / $row->total_assignment) * 100)
-                    : 0;
+    // % Non Open = (Assignment - Open) / Assignment
+    $row->status_non_open =
+        $row->total_assignment - $row->status_open;
 
-                $row->status_submit_plus = $row->status_submitted_pencacah
-                    + $row->status_approved_pengawas
-                    + $row->status_rejected_pengawas;
-                $row->pct_submitted = $row->total_assignment > 0
-                    ? round(($row->status_submit_plus / $row->total_assignment) * 100)
-                    : 0;
+    $row->pct_non_open = $row->total_assignment > 0
+        ? round(($row->status_non_open / $row->total_assignment) * 100)
+        : 0;
 
-               $approvedBaru =
-                    $row->status_approved_pengawas +
-                    $row->status_edited_pengawas +
-                    $row->status_submitted_respondent +
-                    $row->status_completed_admin_kab +
-                    $row->status_edited_admin_kab +
-                    $row->status_rejected_admin_kab +
-                    $row->status_revoked_admin_kab;
-                    $row->pct_approved = $row->total_assignment > 0 ? round(($approvedBaru / $row->total_assignment) * 100) : 0;
-                    
-                $ref = $referenceMap->get($row->petugas_username);
-                $row->nama_petugas = $ref->nama_petugas ?? null;
-                $row->kode_kecamatan = $ref->kode_kecamatan ?? null;
-                $row->nama_kecamatan = $ref->nama_kecamatan ?? null;
+    // % Selain Non Open & Draft = (Assignment - Open - Draft) / Assignment
+    $row->status_non_open_draft =
+        $row->total_assignment
+        - $row->status_open
+        - $row->status_draft;
 
-                return $row;
-            });
+    $row->pct_submitted = $row->total_assignment > 0
+        ? round(($row->status_non_open_draft / $row->total_assignment) * 100)
+        : 0;
+
+    // % Approved = (Assignment - Open - Draft - Submitted) / Assignment
+    $row->status_approved_progress =
+        $row->total_assignment
+        - $row->status_open
+        - $row->status_draft
+        - $row->status_submitted_pencacah;
+
+    $row->pct_approved = $row->total_assignment > 0
+        ? round(($row->status_approved_progress / $row->total_assignment) * 100)
+        : 0;
+
+    $ref = $referenceMap->get($row->petugas_username);
+    $row->nama_petugas = $ref->nama_petugas ?? null;
+    $row->kode_kecamatan = $ref->kode_kecamatan ?? null;
+    $row->nama_kecamatan = $ref->nama_kecamatan ?? null;
+
+    return $row;
+});
 
         // ----- Kelompokkan per Kecamatan -----
         $perPetugasGrouped = $perPetugas
@@ -219,29 +226,28 @@ $this->applyFilters($baseQuery, $filters);
                     'status_revoked_admin_kab' => $sorted->sum('status_revoked_admin_kab'),
 
                     'status_non_open' => $sorted->sum('status_non_open'),
-                    'status_submit_plus' => $sorted->sum('status_submit_plus'),
+                    'status_non_open_draft' => $sorted->sum('status_non_open_draft'),
                 ];
                 $subtotal['progress'] = $subtotal['total_assignment'] > 0
                     ? round(($subtotal['status_approved_pengawas'] / $subtotal['total_assignment']) * 100, 1)
                     : 0;
-                $subtotal['pct_non_open'] = $subtotal['total_assignment'] > 0
-                    ? round(($subtotal['status_non_open'] / $subtotal['total_assignment']) * 100)
-                    : 0;
-                $subtotal['pct_submitted'] = $subtotal['total_assignment'] > 0
-                    ? round(($subtotal['status_submit_plus'] / $subtotal['total_assignment']) * 100)
+                $subtotal['pct_non_open'] =
+                $subtotal['total_assignment'] > 0
+                    ? round((($subtotal['total_assignment'] - $subtotal['status_open']) / $subtotal['total_assignment']) * 100)
                     : 0;
 
-                $approvedBaru =
-                $subtotal['status_approved_pengawas'] +
-                $subtotal['status_edited_pengawas'] +
-                $subtotal['status_submitted_respondent'] +
-                $subtotal['status_completed_admin_kab'] +
-                $subtotal['status_edited_admin_kab'] +
-                $subtotal['status_rejected_admin_kab'] +
-                $subtotal['status_revoked_admin_kab'];
+                $subtotal['pct_submitted'] =
+                    $subtotal['total_assignment'] > 0
+                        ? round((($subtotal['total_assignment'] - $subtotal['status_open'] - $subtotal['status_draft']) / $subtotal['total_assignment']) * 100)
+                        : 0;
 
                 $subtotal['pct_approved'] =
-                $subtotal['total_assignment'] > 0 ? round(($approvedBaru / $subtotal['total_assignment']) * 100) : 0;
+                    $subtotal['total_assignment'] > 0
+                    ? round((($subtotal['total_assignment']
+                        - $subtotal['status_open']
+                        - $subtotal['status_draft']
+                        - $subtotal['status_submitted_pencacah']) / $subtotal['total_assignment']) * 100)
+                    : 0;
                 return [
                     'label' => '['.$kodeSingkat.'] '.mb_strtoupper($namaKecamatan),
                     'kode' => $first->kode_kecamatan ?? 'ZZZ',
@@ -344,13 +350,10 @@ foreach ($availableDatesForTrend as $date) {
     if ($row && $row->total > 0) {
 
     $approvedBaru =
-        $row->approved +
-        ($row->edited_pengawas ?? 0) +
-        ($row->submitted_respondent ?? 0) +
-        ($row->completed_admin ?? 0) +
-        ($row->edited_admin ?? 0) +
-        ($row->rejected_admin ?? 0) +
-        ($row->revoked_admin ?? 0);
+    $row->total
+    - $row->open
+    - $row->draft
+    - $row->submitted;
 
     $trend['pct_approved'][] = round(
         ($approvedBaru / $row->total) * 100,
@@ -462,32 +465,45 @@ foreach ($availableDatesForTrend as $date) {
         $rejectedAdmin = (int) ($row->rejected_admin ?? 0);
         $revokedAdmin = (int) ($row->revoked_admin ?? 0);
         $nonOpen = $total - $open;
-        $submitPlus = $submitted + $approved + $rejected;
-        $approvedBaru =
-            $approved +
-            $editedPengawas +
-            $submittedRespondent +
-            $completedAdmin +
-            $editedAdmin +
-            $rejectedAdmin +
-            $revokedAdmin;
+        $nonOpenDraft = $total - $open - $draft;
+        $approvedBaru = $total - $open - $draft - $submitted;
 
         return [
-            'total' => $total,
-            'open' => $open,
-            'draft' => $draft,
-            'submitted' => $submitted,
-            'approved' => $approved,
-            'rejected' => $rejected,
-            'non_open' => $nonOpen,
-            'submit_plus' => $submitPlus,
-            'pct_open' => $total > 0 ? round($open / $total * 100, 1) : 0,
-            'pct_draft' => $total > 0 ? round($draft / $total * 100, 1) : 0,
-            'pct_submitted' => $total > 0 ? round($submitPlus / $total * 100) : 0,
-            'pct_submitted_pencacah' => $total > 0 ? round($submitted / $total * 100, 1) : 0,
-            'pct_approved' => $total > 0 ? round(($approvedBaru / $total) * 100) : 0,
-            'pct_rejected' => $total > 0 ? round($rejected / $total * 100, 1) : 0,
-            'pct_non_open' => $total > 0 ? round($nonOpen / $total * 100) : 0,
-        ];
+    'total' => $total,
+    'open' => $open,
+    'draft' => $draft,
+    'submitted' => $submitted,
+    'approved' => $approved,
+    'rejected' => $rejected,
+
+    'non_open' => $nonOpen,
+    'non_open_draft' => $nonOpenDraft,
+
+    'pct_open' => $total > 0 ? round($open / $total * 100, 1) : 0,
+    'pct_draft' => $total > 0 ? round($draft / $total * 100, 1) : 0,
+
+    // % Non Open = (Assignment - Open) / Assignment × 100
+    'pct_non_open' => $total > 0
+        ? round((($total - $open) / $total) * 100)
+        : 0,
+
+    // % Selain Non Open & Draft = (Assignment - Open - Draft) / Assignment × 100
+    'pct_submitted' => $total > 0
+        ? round((($total - $open - $draft) / $total) * 100)
+        : 0,
+
+    'pct_submitted_pencacah' => $total > 0
+        ? round($submitted / $total * 100, 1)
+        : 0,
+
+    // % Approved = (Assignment - Open - Draft - Submitted) / Assignment × 100
+    'pct_approved' => $total > 0
+        ? round((($total - $open - $draft - $submitted) / $total) * 100)
+        : 0,
+
+    'pct_rejected' => $total > 0
+        ? round($rejected / $total * 100, 1)
+        : 0,
+];
     }
 }

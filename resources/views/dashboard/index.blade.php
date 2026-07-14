@@ -315,7 +315,7 @@
         </div>
         <div class="relative z-10 mt-5 border-t border-white/20 pt-4">
             <p class="text-sm text-teal-100 leading-relaxed">
-                <strong class="text-white">{{ number_format($summary['submit_plus']) }}</strong>
+                <strong class="text-white">{{ number_format($summary['non_open_draft']) }}</strong>
                 assignment telah mencapai status
                 <strong class="text-white">Submitted</strong>,
                 <strong class="text-white">Approved</strong>
@@ -573,17 +573,21 @@
                 <div class="px-5 py-4 border-b border-slate-200">
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Tren Status Assignment (Histori Semua Tanggal)</h3>
                 </div>
-                <div class="p-5">
-                    <canvas id="trendChart" height="260"></canvas>
+            <div class="px-5 pb-5">
+                <div class="relative h-[460px]">
+                    <canvas id="trendChart"></canvas>
                 </div>
+            </div>
             </div>
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-200">
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Komposisi Status Hari Ini</h3>
                 </div>
-                <div class="p-5">
-                    <canvas id="donutChart" height="260"></canvas>
+            <div class="px-5 pb-5">
+                <div class="relative h-[460px]">
+                    <canvas id="donutChart"></canvas>
                 </div>
+            </div>
             </div>
         </div>
 
@@ -698,7 +702,7 @@
                                 </td>
 
                                 <td class="px-5 py-3 text-right font-semibold text-indigo-600">
-                                {{ number_format($group['subtotal']['status_submit_plus']) }}
+                                {{ number_format($group['subtotal']['status_non_open_draft']) }}
                                 </td>
 
                                 <td class="px-5 py-3 text-right font-semibold text-cyan-700">
@@ -730,7 +734,7 @@
                                     <td class="px-5 py-3 text-right font-semibold text-emerald-600">{{ number_format($row->status_approved_pengawas) }}</td>
                                     <td class="px-5 py-3 text-right font-semibold text-red-600">{{ number_format($row->status_rejected_pengawas) }}</td>
                                     <td class="px-5 py-3 text-right font-semibold text-slate-600">{{ number_format($row->status_non_open) }}</td>
-                                    <td class="px-5 py-3 text-right font-semibold text-indigo-600">{{ number_format($row->status_submit_plus) }}</td>
+                                    <td class="px-5 py-3 text-right font-semibold text-indigo-600">{{ number_format($row->status_non_open_draft) }}</td>
                                     <td class="px-5 py-3 text-right font-semibold text-cyan-700">{{ $row->pct_non_open }}%</td>
                                     <td class="px-5 py-3 text-right font-semibold text-teal-700">{{ $row->pct_submitted }}%</td>
                                     <td class="px-5 py-3 text-right font-bold text-emerald-300">{{ $row['pct_approved'] }}%</td>
@@ -751,7 +755,7 @@
                                 <td class="px-5 py-3 text-right font-bold text-emerald-300">{{ number_format($summary['approved']) }}</td>
                                 <td class="px-5 py-3 text-right font-bold text-orange-300">{{ number_format($summary['rejected']) }}</td>
                                 <td class="px-5 py-3 text-right font-bold text-slate-300">{{ number_format($summary['non_open']) }}</td>
-                                <td class="px-5 py-3 text-right font-bold text-indigo-300">{{ number_format($summary['submit_plus']) }}</td>
+                                <td class="px-5 py-3 text-right font-bold text-indigo-300">{{ number_format($summary['non_open_draft']) }}</td>
                                 <td class="px-5 py-3 text-right font-bold text-sky-300">{{ $summary['pct_non_open'] }}%</td>
                                 <td class="px-5 py-3 text-right font-bold text-teal-300">{{ $summary['pct_submitted'] }}%</td>
                                 <td class="px-5 py-3 text-right font-bold text-emerald-300">{{ $summary['pct_approved'] }}%</td>
