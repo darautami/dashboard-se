@@ -574,7 +574,7 @@
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Tren Status Assignment (Histori Semua Tanggal)</h3>
                 </div>
             <div class="px-5 pb-5">
-                <div class="relative h-[460px]">
+                <div class="relative h-[360px]">
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
@@ -584,7 +584,7 @@
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Komposisi Status Hari Ini</h3>
                 </div>
             <div class="px-5 pb-5">
-                <div class="relative h-[460px]">
+                <div class="relative h-[360px]">
                     <canvas id="donutChart"></canvas>
                 </div>
             </div>

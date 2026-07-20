@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         borderWidth: 3,
                         tension: 0.35,
                         pointRadius: 4,
-                        pointHoverRadius: 5,
+                        pointHoverRadius: 6,
                     },
                     
                     {
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         borderWidth: 3,
                         tension: 0.35,
                         pointRadius: 4,
-                        pointHoverRadius: 5,
+                        pointHoverRadius: 6,
                     },
                     {
                         label: 'Draft',
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         borderWidth: 3,
                         tension: 0.35,
                         pointRadius: 4,
-                        pointHoverRadius: 5,
+                        pointHoverRadius: 6,
                     },
                     {
                         label: 'Submitted by Pencacah',
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         borderWidth: 3,
                         tension: 0.35,
                         pointRadius: 4,
-                        pointHoverRadius: 5,
+                        pointHoverRadius: 6,
                     },
                     {
                         label: 'Approved by Pengawas',
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         borderWidth: 3,
                         tension: 0.35,
                         pointRadius: 4,
-                        pointHoverRadius: 5,
+                        pointHoverRadius: 6,
                     },
                     {
                         label: 'Rejected by Pengawas',
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         borderWidth: 3,
                         tension: 0.35,
                         pointRadius: 4,
-                        pointHoverRadius: 5,
+                        pointHoverRadius: 6,
                     },
                 ],
             },
