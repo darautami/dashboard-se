@@ -40,14 +40,7 @@ class ExportController extends Controller
                 MAX(kabupaten_code) as kabupaten_code,
                 MAX(kabupaten_name) as kabupaten_name,
 
-                SUM(
-                    status_open +
-                    status_draft +
-                    status_submitted_pencacah +
-                    status_approved_pengawas +
-                    status_rejected_pengawas
-                ) as total_assignment,
-
+                SUM(sls_total_assignment) as total_assignment,
                 SUM(status_open) as status_open,
                 SUM(status_draft) as status_draft,
                 SUM(status_submitted_pencacah) as status_submitted_pencacah,
@@ -325,7 +318,7 @@ return $this->exportXlsx(
                 petugas_username,
                 MAX(kabupaten_code) as kabupaten_code,
                 MAX(kabupaten_name) as kabupaten_name,
-
+                SUM(sls_total_assignment) as total_assignment,
                 SUM(status_open) as status_open,
                 SUM(status_draft) as status_draft,
                 SUM(status_submitted_pencacah) as status_submitted_pencacah,
@@ -379,6 +372,7 @@ return $this->exportXlsx(
 
         $rowIndex = 2;
         $grand = [
+            'assignment' => 0,
             'open' => 0,
             'draft' => 0,
             'submit' => 0,
@@ -421,6 +415,7 @@ return $this->exportXlsx(
                 return $ref->nama_petugas ?? $row->petugas_username;
             })->values();
 
+            $kecTotalAssignment = (int) $petugasSorted->sum('total_assignment');
             $kecOpen = (int) $petugasSorted->sum('status_open');
             $kecDraft = (int) $petugasSorted->sum('status_draft');
             $kecSubmit = (int) $petugasSorted->sum('status_submitted_pencacah');
@@ -438,6 +433,7 @@ return $this->exportXlsx(
                 $sheet,
                 $rowIndex,
                 $labelKecamatan,
+                $kecTotalAssignment,
                 $kecOpen,
                 $kecDraft,
                 $kecSubmit,
@@ -462,6 +458,7 @@ return $this->exportXlsx(
                     $sheet,
                     $rowIndex,
                     $namaPetugas,
+                    (int) $p->total_assignment,
                     (int) $p->status_open,
                     (int) $p->status_draft,
                     (int) $p->status_submitted_pencacah,
@@ -479,6 +476,7 @@ return $this->exportXlsx(
                 $rowIndex++;
             }
 
+            $grand['assignment'] += $kecTotalAssignment;
             $grand['open'] += $kecOpen;
             $grand['draft'] += $kecDraft;
             $grand['submit'] += $kecSubmit;
@@ -499,6 +497,7 @@ return $this->exportXlsx(
             $sheet,
             $rowIndex,
             $labelGrand,
+            $grand['assignment'],
             $grand['open'],
             $grand['draft'],
             $grand['submit'],
@@ -526,6 +525,7 @@ return $this->exportXlsx(
             $sheet,
             int $row,
             string $label,
+            int $assignment,
             int $open,
             int $draft,
             int $submit,
@@ -541,7 +541,7 @@ return $this->exportXlsx(
             bool $bold
         ): void {
         $sheet->setCellValue("A{$row}", $label);
-        $sheet->setCellValue("B{$row}", "=SUM(C{$row}:G{$row})");
+        $sheet->setCellValue("B{$row}", $assignment);
         $sheet->setCellValue("C{$row}", $open);
         $sheet->setCellValue("D{$row}", $draft);
         $sheet->setCellValue("E{$row}", $submit);

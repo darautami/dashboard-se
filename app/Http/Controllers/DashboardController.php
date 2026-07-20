@@ -116,7 +116,7 @@ if ($filters['petugas_role']) {
 $this->applyFilters($baseQuery, $filters);
 
         $summaryRow = (clone $baseQuery)->selectRaw('
-        COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
+        COALESCE(SUM(sls_total_assignment),0) as total,
         COALESCE(SUM(status_open),0) as open,
         COALESCE(SUM(status_draft),0) as draft,
         COALESCE(SUM(status_submitted_pencacah),0) as submitted,
@@ -139,7 +139,7 @@ $this->applyFilters($baseQuery, $filters);
         ->selectRaw('
             petugas_username,
             MAX(petugas_email) as petugas_email,
-            SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas) as total_assignment,
+            SUM(sls_total_assignment) as total_assignment,
             SUM(status_open) as status_open,
             SUM(status_draft) as status_draft,
             SUM(status_submitted_pencacah) as status_submitted_pencacah,
@@ -271,7 +271,7 @@ $trendQuery = AssignmentSnapshot::query()
     })
     ->selectRaw('
         upload_date,
-        COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
+        COALESCE(SUM(sls_total_assignment),0) as total,
         COALESCE(SUM(status_open),0) as open,
         COALESCE(SUM(status_draft),0) as draft,
         COALESCE(SUM(status_submitted_pencacah),0) as submitted,
@@ -304,7 +304,7 @@ if ($previousDate) {
     $prevQueryDirect = AssignmentSnapshot::query()
         ->whereDate('upload_date', $previousDate)
         ->selectRaw('
-        COALESCE(SUM(status_open + status_draft + status_submitted_pencacah + status_approved_pengawas + status_rejected_pengawas),0) as total,
+        COALESCE(SUM(sls_total_assignment),0) as total,
         COALESCE(SUM(status_open),0) as open,
         COALESCE(SUM(status_draft),0) as draft,
         COALESCE(SUM(status_submitted_pencacah),0) as submitted,
