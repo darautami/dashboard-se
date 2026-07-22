@@ -258,12 +258,16 @@ $this->applyFilters($baseQuery, $filters);
             ->sortBy('kode')
             ->values();
 
-       // ----- Data tren historis (dibatasi 7 hari terakhir) -----
-$availableDatesForTrend = $availableDates
-    ->unique()
-    ->sort()
-    ->values()
-    ->slice(-7);
+// ----- Data tren historis (dari awal sampai tanggal terpilih, maks 7) -----
+$sortedDates = $availableDates->unique()->sort()->values();
+$selectedIndex = $sortedDates->search($selectedDate);
+
+if ($selectedIndex === false) {
+    $availableDatesForTrend = $sortedDates->slice(-7)->values();
+} else {
+    // Ambil semua tanggal dari awal sampai tanggal terpilih, lalu ambil 7 terakhir
+    $availableDatesForTrend = $sortedDates->slice(0, $selectedIndex + 1)->slice(-7)->values();
+}
 
 $trendQuery = AssignmentSnapshot::query()
     ->when($filters['petugas_role'], function ($q, $role) {

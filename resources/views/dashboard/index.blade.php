@@ -562,7 +562,6 @@
             </div>
 
             @if ($comparison)
-                <p class="text-xs text-slate-400 mt-3">* Perbandingan dihitung terhadap data tanggal {{ $comparison['date'] }} (upload sebelumnya).</p>
             @endif
 
         </div>
@@ -571,7 +570,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-200">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Tren Status Assignment (Histori Semua Tanggal)</h3>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Tren Status Assignment (Histori 7 Hari Terakhir)</h3>
                 </div>
             <div class="px-5 pb-5">
                 <div class="relative h-[360px]">
@@ -773,10 +772,13 @@
 </div>
 
     <script id="dashboard-data" type="application/json">
-        {!! json_encode([
-            'trend' => $trend,
-            'summary' => $summary,
-        ]) !!}
+    {!! json_encode([
+        'trend' => $trend,
+        'summary' => $summary,
+        'selectedLabel' => request()->has('tanggal') && $selectedDate
+            ? \Illuminate\Support\Carbon::parse($selectedDate)->translatedFormat('d M')
+            : null,
+    ]) !!}
     </script>
     <script src="{{ asset('js/dashboard.js') }}"></script>
 

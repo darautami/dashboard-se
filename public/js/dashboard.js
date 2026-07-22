@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const payload = JSON.parse(dataEl.textContent);
     const trend = payload.trend;
     const summary = payload.summary;
+    const selectedLabel = payload.selectedLabel;
 
     const COLORS = {
         total: '#64748b',
@@ -15,101 +16,105 @@ document.addEventListener('DOMContentLoaded', function () {
         rejected: '#ef4444',
     };
 
+    // Plugin garis vertikal untuk highlight tanggal terpilih
+    const verticalLinePlugin = {
+        id: 'verticalLine',
+        afterDraw(chart) {
+            if (!selectedLabel) return;
+
+            const labels = chart.data.labels;
+            const index = labels.indexOf(selectedLabel);
+            if (index === -1) return;
+
+            const ctx = chart.ctx;
+            const xPos = chart.scales.x.getPixelForValue(index);
+            const topY = chart.scales.y.top;
+            const bottomY = chart.scales.y.bottom;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(xPos, topY);
+            ctx.lineTo(xPos, bottomY);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#f59e0b';
+            ctx.setLineDash([6, 3]);
+            ctx.stroke();
+            ctx.restore();
+
+            // Label di atas garis
+            ctx.save();
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('▼ ' + selectedLabel, xPos, topY - 3);
+            ctx.restore();
+        }
+    };
+
     // ---------------- Trend Line Chart ----------------
     const trendCanvas = document.getElementById('trendChart');
     if (trendCanvas) {
         new Chart(trendCanvas, {
             type: 'line',
+            plugins: [verticalLinePlugin],
             data: {
                 labels: trend.labels,
                 datasets: [
                     {
-                        
                         label: 'Total Assignment',
                         data: trend.total,
                         borderColor: COLORS.total,
                         backgroundColor: COLORS.total,
-                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        pointRadius: 3,
                     },
-                    
                     {
                         label: 'Open',
                         data: trend.open,
                         borderColor: COLORS.open,
                         backgroundColor: COLORS.open,
-                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        pointRadius: 3,
                     },
                     {
                         label: 'Draft',
                         data: trend.draft,
                         borderColor: COLORS.draft,
                         backgroundColor: COLORS.draft,
-                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        pointRadius: 3,
                     },
                     {
                         label: 'Submitted by Pencacah',
                         data: trend.submitted,
                         borderColor: COLORS.submitted,
                         backgroundColor: COLORS.submitted,
-                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        pointRadius: 3,
                     },
                     {
                         label: 'Approved by Pengawas',
                         data: trend.approved,
                         borderColor: COLORS.approved,
                         backgroundColor: COLORS.approved,
-                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        pointRadius: 3,
                     },
                     {
                         label: 'Rejected by Pengawas',
                         data: trend.rejected,
                         borderColor: COLORS.rejected,
                         backgroundColor: COLORS.rejected,
-                        borderWidth: 3,
                         tension: 0.35,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        pointRadius: 3,
                     },
                 ],
             },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: false,
-
-                            layout: {
-                    padding: {
-                        top: 10,
-                        right: 10,
-                        bottom: 10,
-                        left: 10
-                    }
-                },
-
-                    interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-
-                hover: {
-                    mode: 'index',
-                    intersect: false
-                },
+            options: {
+                responsive: true,
+                animation: false,
+                maintainAspectRatio: true,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
                 },
@@ -120,6 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // ---------------- Donut Chart ----------------
     const donutCanvas = document.getElementById('donutChart');
     if (donutCanvas) {
         new Chart(donutCanvas, {
@@ -131,22 +137,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     backgroundColor: [COLORS.open, COLORS.draft, COLORS.submitted, COLORS.approved, COLORS.rejected],
                     borderWidth: 0,
                 }],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    cutout: '62%',
-
-                    layout: {
-            padding: {
-                top: 10,
-                right: 10,
-                bottom: 10,
-                left: 10
-            }
-    },
-
+            },
+            options: {
+                responsive: true,
+                animation: false,
+                maintainAspectRatio: true,
+                cutout: '62%',
                 plugins: {
                     legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
                 },
