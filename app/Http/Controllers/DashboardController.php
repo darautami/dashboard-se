@@ -269,9 +269,14 @@ if ($selectedIndex === false) {
     $availableDatesForTrend = $sortedDates->slice(0, $selectedIndex + 1)->slice(-7)->values();
 }
 
+$isFirstLoad = !$request->filled('tanggal');
+
 $trendQuery = AssignmentSnapshot::query()
     ->when($filters['petugas_role'], function ($q, $role) {
         $q->where('petugas_role', $role);
+    })
+    ->when($isFirstLoad && $latestUpload && !$filters['petugas_role'], function ($q) use ($latestUpload) {
+        $q->where('petugas_role', $latestUpload->petugas_role);
     })
     ->selectRaw('
         upload_date,
@@ -424,7 +429,7 @@ foreach ($availableDatesForTrend as $date) {
             ->map(fn ($group) => $group->pluck('sls_code')->unique()->sort()->values())
             ->toArray();
 
-        return view('dashboard.index', [
+               return view('dashboard.index', [
             'availableDates' => $availableDates,
             'selectedDate' => $selectedDate,
             'filters' => $filters,
@@ -439,6 +444,8 @@ foreach ($availableDatesForTrend as $date) {
             'comparison' => $comparison,
             'kecamatanPetugasMap' => $kecamatanPetugasMap,
             'kecamatanSlsMap' => $kecamatanSlsMap,
+            'isFirstLoad' => $isFirstLoad,
+            'latestUpload' => $latestUpload,
         ]);
     }
 

@@ -55,7 +55,7 @@ use Illuminate\Support\Facades\Storage;
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v9m0-9l-3 3m3-3l3 3"/>
                         </svg>
-                        Upload Sekarang
+                        Upload
                     </button>
                 </div>
 
@@ -190,22 +190,26 @@ use Illuminate\Support\Facades\Storage;
         </a>
     @endif
 
-    <a href="{{ route('dashboard', ['tanggal' => $upload->upload_date->format('Y-m-d')]) }}"
-       class="text-sky-600 hover:text-sky-700 hover:underline text-xs font-semibold mr-4">
-        Lihat di Dashboard
-    </a>
+    <a href="{{ route('dashboard', [
+       'tanggal'      => $upload->upload_date->format('Y-m-d'),
+       'petugas_role' => $upload->petugas_role ?? 'Pencacah',
+   ]) }}"
+   class="text-sky-600 hover:text-sky-700 hover:underline text-xs font-semibold mr-4">
+    Lihat di Dashboard
+</a>
 
     <form action="{{ route('uploads.destroy', $upload) }}"
-          method="POST"
-          class="inline">
-        @csrf
-        @method('DELETE')
+      method="POST"
+      class="inline"
+      onsubmit="return confirm('Yakin ingin menghapus riwayat upload data assignment ini?')">
+    @csrf
+    @method('DELETE')
 
-        <button type="submit"
-                class="text-red-500 hover:text-red-700 hover:underline text-xs font-semibold">
-            Hapus
-        </button>
-    </form>
+    <button type="submit"
+            class="text-red-500 hover:text-red-700 hover:underline text-xs font-semibold">
+        Hapus
+    </button>
+</form>
 
 </td>
 

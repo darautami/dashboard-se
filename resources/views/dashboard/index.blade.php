@@ -190,6 +190,22 @@
 
     </div>
 
+        {{-- ================= NOTE FIRST LOAD ================= --}}
+    @if($isFirstLoad && $latestUpload)
+    <div class="flex items-start gap-3 bg-sky-50 border border-sky-200 text-sky-800 text-xs leading-relaxed rounded-xl px-4 py-3.5">
+        <svg class="w-4 h-4 shrink-0 mt-0.5 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p>
+            <strong>Info:</strong> Data yang ditampilkan saat ini adalah hasil dari upload terakhir
+            pada <strong>{{ $latestUpload->upload_date->translatedFormat('d F Y') }}</strong>
+            untuk role <strong>{{ $latestUpload->petugas_role }}</strong>.
+            Grafik menampilkan tren 7 hari terakhir untuk role yang sama.
+            Gunakan filter di atas untuk melihat data lainnya.
+        </p>
+    </div>
+    @endif
+
     {{-- ================= EXPORT ================= --}}
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
 

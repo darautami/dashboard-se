@@ -9,18 +9,42 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <style>
-        #sidebar { width: 56px; overflow: hidden; transition: width 0.3s ease; }
-        #sidebar.expanded { width: 224px; }
-        #sidebar .sidebar-text { display: none; white-space: nowrap; }
-        #sidebar.expanded .sidebar-text { display: inline; }
-        #sidebar .sidebar-logo { display: none; }
-        #sidebar.expanded .sidebar-logo { display: block; }
-        #sidebar .sidebar-icon-only { display: flex; }
-        #sidebar.expanded .sidebar-icon-only { display: none; }
-        #sidebar .nav-link { justify-content: center; }
-        #sidebar.expanded .nav-link { justify-content: flex-start; }
-    </style>
+ <style>
+    #sidebar { width: 56px; overflow: hidden; transition: width 0.3s ease; position: relative; z-index: 40; }
+    #sidebar.expanded { width: 224px; }
+    #sidebar .sidebar-text { display: none; white-space: nowrap; }
+    #sidebar.expanded .sidebar-text { display: inline; }
+    #sidebar .sidebar-logo { display: none; }
+    #sidebar.expanded .sidebar-logo { display: block; }
+    #sidebar .sidebar-icon-only { display: flex; }
+    #sidebar.expanded .sidebar-icon-only { display: none; }
+    #sidebar .nav-link { justify-content: center; }
+    #sidebar.expanded .nav-link { justify-content: flex-start; }
+
+    @media (max-width: 768px) {
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 0 !important;
+            z-index: 50;
+        }
+        #sidebar.expanded {
+            width: 224px !important;
+        }
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 49;
+        }
+        #sidebar-overlay.active {
+            display: block;
+        }
+    }
+</style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased">
 
@@ -66,8 +90,11 @@
             </div>
         </aside>
 
+                {{-- Overlay mobile --}}
+        <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
         <!-- Main -->
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex-1 flex flex-col min-w-0" id="app-main-content">
             <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 shadow-sm">
                 <div class="flex items-center gap-3">
                     <button onclick="toggleSidebar()" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500" title="Sembunyikan/tampilkan sidebar">
@@ -124,11 +151,26 @@
         </div>
     </div>
 
-    <script>
+        <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
             sidebar.classList.toggle('expanded');
+            if (window.innerWidth <= 768) {
+                overlay.classList.toggle('active');
+            }
         }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('expanded');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+        }
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 768) {
+                document.getElementById('sidebar-overlay').classList.remove('active');
+            }
+        });
     </script>
 
 </body>
