@@ -59,3 +59,16 @@
     background: #f1f5f9;
     border: 1px solid #e2e8f0;
 }
+
+/* Grafik responsive */
+.chart-wrapper {
+    position: relative;
+    width: 100%;
+    height: 320px;
+}
+
+@media (max-width: 768px) {
+    .chart-wrapper {
+        height: 220px;
+    }
+}

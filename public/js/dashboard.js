@@ -110,16 +110,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                 ],
             },
-            options: {
+                      options: {
                 responsive: true,
                 animation: false,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, font: { size: 11 }, padding: 8 }
+                    },
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+                    x: { ticks: { font: { size: 10 } } },
                 },
             },
         });
@@ -138,15 +142,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     borderWidth: 0,
                 }],
             },
-            options: {
+                       options: {
                 responsive: true,
                 animation: false,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 cutout: '62%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, font: { size: 11 }, padding: 8 }
+                    },
                 },
             },
+            
         });
     }
 });

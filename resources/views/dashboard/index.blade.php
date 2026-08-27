@@ -223,9 +223,9 @@
 
             </div>
 
-            <form method="GET"
+                         <form method="GET"
                   action="{{ route('export') }}"
-                  class="flex flex-wrap gap-4 items-end">
+                  class="w-full lg:w-auto">
 
                 <input type="hidden" name="tanggal" value="{{ $selectedDate }}">
                 <input type="hidden" name="petugas_username" value="{{ $filters['petugas_username'] }}">
@@ -233,50 +233,43 @@
                 <input type="hidden" name="sls_code" value="{{ $filters['sls_code'] }}">
                 <input type="hidden" name="nama_kecamatan" value="{{ $filters['nama_kecamatan'] }}">
 
-                <div>
+                <div class="grid grid-cols-2 lg:flex lg:flex-row gap-3 items-end">
 
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                        Cakupan
-                    </label>
+                    <div class="col-span-2 lg:col-auto">
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                            Cakupan
+                        </label>
+                        <select
+                            name="scope"
+                            class="w-full lg:w-56 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/40 focus:outline-none transition">
+                            <option value="current">
+                                {{ $selectedDate
+                                    ? \Carbon\Carbon::parse($selectedDate)->translatedFormat('d F Y')
+                                    : '-' }}
+                            </option>
+                        </select>
+                    </div>
 
-                    <select
-                        name="scope"
-                        class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 w-56 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/40 focus:outline-none transition">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                            Format
+                        </label>
+                        <input type="hidden" name="format" value="xlsx">
+                        <input
+                            type="text"
+                            value="Excel"
+                            readonly
+                            class="w-full rounded-xl border border-slate-300 bg-gray-100 px-3 py-2.5 text-sm text-slate-400 cursor-not-allowed">
+                    </div>
 
-                        <option value="current">
-
-                            {{ $selectedDate
-                                ? \Carbon\Carbon::parse($selectedDate)->translatedFormat('d F Y')
-                                : '-' }}
-
-                        </option>
-
-                    </select>
+                    <div class="flex items-end">
+                        <button
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 h-11 text-sm font-semibold shadow-sm hover:shadow transition">
+                            Export
+                        </button>
+                    </div>
 
                 </div>
-
-                <div>
-
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                        Format
-                    </label>
-
-                    <input type="hidden" name="format" value="xlsx">
-
-                    <input
-                        type="text"
-                        value="Excel"
-                        readonly
-                        class="rounded-xl border border-slate-300 bg-gray-100 px-3 py-2.5 text-sm text-slate-400 w-36 cursor-not-allowed">
-
-                </div>
-
-                <button
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 h-11 text-sm font-semibold shadow-sm hover:shadow transition">
-
-                    Export
-
-                </button>
 
             </form>
 
@@ -588,21 +581,21 @@
                 <div class="px-5 py-4 border-b border-slate-200">
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Tren Status Assignment (Histori 7 Hari Terakhir)</h3>
                 </div>
-            <div class="px-5 pb-5">
-                <div class="relative h-[360px]">
-                    <canvas id="trendChart"></canvas>
+                <div class="px-5 pb-5 pt-4">
+                    <div class="chart-wrapper">
+                        <canvas id="trendChart"></canvas>
+                    </div>
                 </div>
-            </div>
             </div>
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-200">
                     <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Komposisi Status Hari Ini</h3>
                 </div>
-            <div class="px-5 pb-5">
-                <div class="relative h-[360px]">
-                    <canvas id="donutChart"></canvas>
+                <div class="px-5 pb-5 pt-4">
+                    <div class="chart-wrapper">
+                        <canvas id="donutChart"></canvas>
+                    </div>
                 </div>
-            </div>
             </div>
         </div>
 
